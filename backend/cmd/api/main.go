@@ -1,6 +1,6 @@
 // Command api serves the Tenfold API.
 //
-// For now it serves only the contract and its docs. The /v1 handlers
+// For now it serves only the health check, the contract and its docs. The /v1 handlers
 // implement api.StrictServerInterface and are mounted in the backend session.
 package main
 
@@ -19,6 +19,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", api.HealthHandler)
 	mux.HandleFunc("GET /openapi.yaml", api.SpecHandler)
 	mux.HandleFunc("GET /docs", api.DocsHandler)
 
