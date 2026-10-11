@@ -62,6 +62,18 @@ Decide these as you build, and note what you chose.
 - The signal weights (34, 22, 19, 16) and the anomaly threshold of 30 are placeholders.
 - The dismiss dialog in `05` is drawn over the wrong incident. Its layout is correct.
 
+## Where the API contract differs from the drawings
+
+The contract in `api/openapi.yaml` wins on these points.
+
+- **Upload limit.** Files are `.log` or `.csv`, up to 50 MB. The drop zone in `01` says ".gz" and "200 MB"; change that line.
+- **AI assessment values.** The API sends `likely_malicious`, `likely_benign` or `inconclusive`. When the AI did not run, `aiVerdict` and `summary` are absent.
+- **Pipeline stages.** The API reports five stages: parsing, detecting, judging, grouping, narrating. Draw the last two as one node, "Writing report". "Set aside" is `processed` minus `countOut` on the judging stage.
+- **Upload states.** Malformed log, Partial results and AI unavailable are all `status = partial`; tell them apart by `stop.reason`. Their buttons call `analyzeUpload` (resume, or `acceptParseErrors`) or `deleteUpload`.
+- **Status and owner.** "Status: New" is `analystVerdict.status = open`. "Assign to me" calls `updateIncident`.
+- **Derived in the frontend.** "Caught, sent to you" is a `caught` row whose assessment is `inconclusive`. "0 of 3 decided" comes from `verdictCounts`. Citation ranges such as `e1048–e1066` are formatted from the ID list.
+- **Not in the contract yet.** Clicking a pipeline stage to see dropped lines, and the "See them" link in the dismiss dialog. Leave both out.
+
 ---
 
 # Part 2: Reference

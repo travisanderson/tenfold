@@ -1,0 +1,2877 @@
+openapi: 3.0.3
+
+info:
+  title: Tenfold API
+  version: 0.1.0
+  description: |
+    Contract for the Tenfold log-investigation POC. This file is the single
+    source of truth: the Go server types and the TypeScript client types are
+    both generated from it.
+
+    Analysts upload Zscaler web-proxy logs. The API parses each line into a
+    vendor-neutral event (modeled after Google SecOps UDM), runs layered
+    detection (rules, statistics, a fast AI decision, grouping, an AI
+    narrative), and produces a few **incidents**: grouped, evidence-backed
+    stories. Every narrative sentence cites event IDs. The analyst confirms,
+    dismisses, or escalates.
+
+    ## Conventions
+
+    - **AI runs in the background.** No endpoint calls an AI model
+      synchronously. GET endpoints read stored results only.
+    - **Ownership.** Every resource belongs to the calling user. A request for
+      another user's resource returns `404`, never `403`, so existence is not
+      leaked.
+    - **Callers.** The Next.js server forwards the user's Supabase access
+      token. The browser never calls this API directly.
+    - **JSON** is camelCase. **Timestamps** are RFC 3339 in UTC.
+    - **IDs** are UUIDs, except event IDs, which are `e{lineNo}` (for example
+      `e1042`) and unique within one upload, so citations stay readable.
+    - **Pagination** is cursor-based: `?cursor=&limit=`. A page is
+      `{ items, nextCursor, total }`; `nextCursor` is absent on the last page.
+    - **Errors** are RFC 9457 Problem Details (`application/problem+json`).
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Uploads
+    description: Log files and the background analysis job that processes them.
+  - name: Events
+    description: Normalized log events for one upload.
+  - name: Detections
+    description: Anomalies raised by the detection layers, before grouping.
+  - name: Incidents
+    description: Grouped, evidence-backed stories the analyst triages.
+  - name: Lessons
+    description: Analyst-taught rules that suppress known-benign activity ("teach it once").
+  - name: Samples
+    description: Bundled demo log files.
+  - name: Evaluation
+    description: Detection scorecard for uploads that carry an answer key.
+  - name: System
+    description: Health, the contract itself, and interactive docs.
+
+security:
+  - bearerAuth: []
+
+paths:
+  /healthz:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Health check
+      description: Liveness probe. No authentication.
+      security: []
+      responses:
+        "200":
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /openapi.yaml:
+    get:
+      tags: [System]
+      operationId: getOpenApiSpec
+      summary: This contract
+      description: Returns this OpenAPI document as YAML. No authentication.
+      security: []
+      responses:
+        "200":
+          description: The OpenAPI document.
+          content:
+            application/yaml:
+              schema:
+                type: string
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /docs:
+    get:
+      tags: [System]
+      operationId: getDocs
+      summary: Interactive docs
+      description: Returns an HTML page that renders this contract. No authentication.
+      security: []
+      responses:
+        "200":
+          description: The docs page.
+          content:
+            text/html:
+              schema:
+                type: string
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/uploads:
+    post:
+      tags: [Uploads]
+      operationId: createUpload
+      summary: Register an upload
+      description: |
+        Creates an upload record and returns a signed URL. The browser then
+        sends the file straight to storage with a `PUT` to `uploadUrl`.
+        **The API never receives file bytes.** Call `analyzeUpload` once the
+        `PUT` succeeds.
+
+        Returns `413` when `sizeBytes` exceeds 50 MB (52,428,800 bytes) and
+        `422` when `contentType` is not an accepted log type.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUploadRequest"
+      responses:
+        "201":
+          description: The upload was registered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+    get:
+      tags: [Uploads]
+      operationId: listUploads
+      summary: List uploads
+      description: Returns the caller's uploads, newest first.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: A page of uploads.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}:
+    get:
+      tags: [Uploads]
+      operationId: getUpload
+      summary: Get an upload
+      description: |
+        Returns one upload with its status, stage, and counts. Returns `404`
+        if the upload does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "200":
+          description: The upload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Upload"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+    delete:
+      tags: [Uploads]
+      operationId: deleteUpload
+      summary: Delete an upload
+      description: |
+        Stops any running job and deletes the file, its events, and its
+        results. This is "Cancel this upload". Lessons are kept. Returns `404`
+        if the upload does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "204":
+          description: The upload was deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/analyze:
+    post:
+      tags: [Uploads]
+      operationId: analyzeUpload
+      summary: Start analysis
+      description: |
+        Starts or resumes the background job: parse, detect, judge, group,
+        narrate. All AI work happens inside this job. The call returns at
+        once; follow progress with `streamUploadProgress` or by polling
+        `getUpload`. The body is optional.
+
+        - **Resume.** If an earlier run stopped (`status: partial`), the job
+          picks up at the stage that stopped. This is how "Resume" and "Try
+          the AI stages again" work.
+        - **Restart.** Send `restart: true` to run every stage again. The
+          pipeline is idempotent and replaces the earlier results.
+        - **Malformed lines.** If any line fails to parse, the job stops after
+          parsing with `status: partial` and `stop.reason: parse_errors`.
+          Call again with `acceptParseErrors: true` to analyze the good lines,
+          or delete the upload.
+
+        Returns `409` if a job is already running for this upload. Returns
+        `404` if the upload does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "202":
+          description: The job was queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Upload"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/progress:
+    get:
+      tags: [Uploads]
+      operationId: streamUploadProgress
+      summary: Stream analysis progress
+      description: |
+        A server-sent event stream for one upload's analysis job. The stream
+        opens with the current state, so a late or reconnecting client catches
+        up at once.
+
+        | Event | Data | Meaning |
+        | --- | --- | --- |
+        | `progress` | `ProgressEvent` JSON | A stage started or a count changed. |
+        | `done` | `ProgressEvent` JSON, `status: completed` | The job finished. The server closes the stream. |
+        | `error` | `Problem` JSON | The job failed. The server closes the stream. |
+
+        Example frame (`pipeline` left out for brevity):
+
+        ```
+        event: progress
+        data: {"uploadId":"7c9e6679-7425-40de-944b-e07fc1f90ae7","status":"processing","stage":"detecting","progress":45,"message":"Scoring 48,212 events","counts":{"lines":48212,"events":48190,"anomalies":0,"incidents":0},"at":"2026-10-09T11:02:11Z"}
+        ```
+
+        **Auth.** A browser `EventSource` cannot send an `Authorization`
+        header. The browser connects to a Next.js Route Handler, which opens
+        this stream with the user's token and relays it.
+
+        Returns `404` if the upload does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "200":
+          description: An event stream of `progress`, `done`, and `error` events.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/events:
+    get:
+      tags: [Events]
+      operationId: listEvents
+      summary: List events
+      description: |
+        Returns normalized events for one upload, filtered and paged. Feeds
+        the event explorer. Returns `404` if the upload does not exist or
+        belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+        - $ref: "#/components/parameters/Cursor"
+        - name: limit
+          in: query
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+        - name: user
+          in: query
+          description: Exact match on `principal.user`.
+          schema:
+            type: string
+          example: dana.k
+        - name: srcIp
+          in: query
+          description: Exact match on `principal.srcIp`.
+          schema:
+            type: string
+          example: 203.0.113.47
+        - name: host
+          in: query
+          description: Exact match on `target.host`.
+          schema:
+            type: string
+          example: files-sync-cdn.net
+        - name: category
+          in: query
+          description: Exact match on `target.category`.
+          schema:
+            type: string
+          example: File Sharing
+        - name: action
+          in: query
+          description: Keep only allowed or only blocked requests.
+          schema:
+            $ref: "#/components/schemas/EventAction"
+        - name: hasAnomaly
+          in: query
+          description: "`true` keeps events tied to at least one anomaly; `false` keeps the rest."
+          schema:
+            type: boolean
+        - name: from
+          in: query
+          description: Keep events at or after this time.
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: Keep events before this time.
+          schema:
+            type: string
+            format: date-time
+        - name: q
+          in: query
+          description: |
+            Search. Terms may be fielded: `user:`, `domain:`, `ip:`, `id:`.
+            A bare term matches user, host, URL, or threat name. Terms are
+            joined by `OR`; nothing else is supported. Other query parameters
+            narrow the result further.
+          example: user:dana.k OR domain:backblazeb2.com
+          schema:
+            type: string
+            maxLength: 200
+        - name: sort
+          in: query
+          description: Sort by timestamp, ascending (`ts`) or descending (`-ts`).
+          schema:
+            $ref: "#/components/schemas/EventSort"
+      responses:
+        "200":
+          description: A page of events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/events/export:
+    get:
+      tags: [Events]
+      operationId: exportEvents
+      summary: Export all events
+      description: |
+        Streams every event of one upload as newline-delimited JSON, one
+        `Event` per line, in timestamp order. Built for the browser's
+        IndexedDB cache. Returns `404` if the upload does not exist or belongs
+        to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "200":
+          description: A stream of `Event` objects, one JSON object per line.
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/timeseries:
+    get:
+      tags: [Events]
+      operationId: getTimeseries
+      summary: Event volume over time
+      description: |
+        Returns event counts and the peak risk score per time bucket. The
+        triage screen calls it twice: `10m` for the risk line, `1h` for the
+        volume bars. Returns
+        `404` if the upload does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+        - name: bucket
+          in: query
+          description: Bucket width.
+          schema:
+            $ref: "#/components/schemas/TimeseriesBucket"
+      responses:
+        "200":
+          description: The bucketed counts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeseriesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/anomalies:
+    get:
+      tags: [Detections]
+      operationId: listAnomalies
+      summary: List anomalies
+      description: |
+        Returns every anomaly raised for one upload, highest risk score first,
+        including those set aside. Filter by `disposition` to see what was set
+        aside and why. Returns `404` if the upload does not exist or belongs
+        to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: detector
+          in: query
+          description: Keep anomalies from one detector.
+          schema:
+            $ref: "#/components/schemas/DetectorType"
+        - name: disposition
+          in: query
+          description: Keep anomalies with one outcome.
+          schema:
+            $ref: "#/components/schemas/AnomalyDisposition"
+        - name: judgesDisagree
+          in: query
+          description: "`true` keeps anomalies where `decision` and `shadowDecision` gave different labels."
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: A page of anomalies.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnomalyPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/incidents:
+    get:
+      tags: [Incidents]
+      operationId: listIncidents
+      summary: List incidents
+      description: |
+        Returns every incident of one upload, sorted by severity, then by
+        risk score. The list is short by design, so it is not paged. Returns
+        `404` if the upload does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "200":
+          description: The incidents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IncidentSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/uploads/{uploadId}/eval:
+    get:
+      tags: [Evaluation]
+      operationId: getEvalReport
+      summary: Detection scorecard
+      description: |
+        Compares the incidents found against the planted attacks in the
+        sample's answer key. Returns `404` if the upload has no answer key,
+        does not exist, or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "200":
+          description: The scorecard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvalReport"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/incidents/{incidentId}:
+    get:
+      tags: [Incidents]
+      operationId: getIncident
+      summary: Get an incident
+      description: |
+        Returns one incident with its narrative, signals, timeline, graph, and
+        evidence. Reads stored results only; it never calls a model. Returns
+        `404` if the incident does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/IncidentId"
+      responses:
+        "200":
+          description: The incident.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+    patch:
+      tags: [Incidents]
+      operationId: updateIncident
+      summary: Assign an incident
+      description: |
+        Assigns the incident to the caller, or clears the assignee. Returns
+        `404` if the incident does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/IncidentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateIncidentRequest"
+      responses:
+        "200":
+          description: The updated incident.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/incidents/{incidentId}/notes:
+    post:
+      tags: [Incidents]
+      operationId: addIncidentNote
+      summary: Add an analyst note
+      description: |
+        Appends a note to the incident. Notes are never edited or deleted.
+        Returns `404` if the incident does not exist or belongs to another
+        user.
+      parameters:
+        - $ref: "#/components/parameters/IncidentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddNoteRequest"
+      responses:
+        "201":
+          description: The note was saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/incidents/{incidentId}/verdict:
+    post:
+      tags: [Incidents]
+      operationId: setIncidentVerdict
+      summary: Record the analyst's verdict
+      description: |
+        Confirms, dismisses, or escalates an incident. Send `lesson` with a
+        dismissal to teach the system once: the lesson is created in the same
+        call and suppresses matching anomalies in later runs. Returns `404` if
+        the incident does not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/IncidentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerdictRequest"
+      responses:
+        "200":
+          description: The incident with its new verdict.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/incidents/{incidentId}/context:
+    get:
+      tags: [Incidents]
+      operationId: getIncidentContext
+      summary: Agent-ready incident context
+      description: |
+        Returns the incident in a compact, cited, typed form for downstream AI
+        agents. Reads stored results only. Returns `404` if the incident does
+        not exist or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/IncidentId"
+      responses:
+        "200":
+          description: The incident context.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentContext"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/lessons:
+    get:
+      tags: [Lessons]
+      operationId: listLessons
+      summary: List lessons
+      description: Returns the caller's lessons, newest first.
+      responses:
+        "200":
+          description: The lessons.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lesson"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+    post:
+      tags: [Lessons]
+      operationId: createLesson
+      summary: Create a lesson
+      description: |
+        Teaches the system that a user, domain, or pattern is known-benign
+        until `expiresAt`. Matching anomalies are suppressed in later runs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonCreate"
+      responses:
+        "201":
+          description: The lesson was created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/lessons/preview:
+    post:
+      tags: [Lessons]
+      operationId: previewLesson
+      summary: Preview a lesson's effect
+      description: |
+        Counts what a lesson with this scope would suppress in one upload,
+        without saving anything. Powers "would suppress 37 anomalies". Returns
+        `404` if the upload does not exist or belongs to another user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonPreviewRequest"
+      responses:
+        "200":
+          description: The counts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonPreviewResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/lessons/{lessonId}:
+    delete:
+      tags: [Lessons]
+      operationId: deleteLesson
+      summary: Delete a lesson
+      description: |
+        Removes a lesson. Past results keep their suppressions until the
+        upload is analyzed again. Returns `404` if the lesson does not exist
+        or belongs to another user.
+      parameters:
+        - $ref: "#/components/parameters/LessonId"
+      responses:
+        "204":
+          description: The lesson was deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/samples:
+    get:
+      tags: [Samples]
+      operationId: listSamples
+      summary: List demo samples
+      description: Returns the bundled demo log files behind "Load demo data".
+      responses:
+        "200":
+          description: The samples.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sample"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+  /v1/samples/{sampleName}/load:
+    post:
+      tags: [Samples]
+      operationId: loadSample
+      summary: Load a demo sample
+      description: |
+        Creates an upload from a bundled sample and starts analysis in one
+        step. Follow progress with `streamUploadProgress`. Returns `404` if
+        the sample does not exist.
+      parameters:
+        - $ref: "#/components/parameters/SampleName"
+      responses:
+        "202":
+          description: The upload was created and its job queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Upload"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: A Supabase-issued access token, forwarded by the Next.js server.
+
+  parameters:
+    UploadId:
+      name: uploadId
+      in: path
+      required: true
+      description: The upload's ID.
+      schema:
+        type: string
+        format: uuid
+      example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+    IncidentId:
+      name: incidentId
+      in: path
+      required: true
+      description: The incident's ID.
+      schema:
+        type: string
+        format: uuid
+      example: 3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b
+    LessonId:
+      name: lessonId
+      in: path
+      required: true
+      description: The lesson's ID.
+      schema:
+        type: string
+        format: uuid
+      example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+    SampleName:
+      name: sampleName
+      in: path
+      required: true
+      description: The sample's name, as returned by `listSamples`.
+      schema:
+        type: string
+        pattern: "^[a-z0-9][a-z0-9-]*$"
+        maxLength: 64
+      example: sample-day
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque cursor from the previous page's `nextCursor`. Omit for the first page.
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      description: Page size.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  headers:
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema:
+        type: integer
+        minimum: 1
+      example: 30
+
+  responses:
+    BadRequest:
+      description: Malformed parameters or body.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            code: bad_request
+            detail: "Query parameter 'limit' must be an integer."
+    Unauthorized:
+      description: Missing or invalid token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Unauthorized
+            status: 401
+            code: unauthorized
+    NotFound:
+      description: The resource does not exist or is not yours.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            code: not_found
+    Conflict:
+      description: A job is already running for this upload.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Conflict
+            status: 409
+            code: analysis_in_progress
+            detail: This upload is already being analyzed.
+    PayloadTooLarge:
+      description: The upload is over the 50 MB cap.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Payload Too Large
+            status: 413
+            code: upload_too_large
+            detail: Files may be at most 52428800 bytes.
+    Unprocessable:
+      description: Valid JSON with invalid values. `errors` names each bad field.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Unprocessable Content
+            status: 422
+            code: validation_failed
+            errors:
+              - field: contentType
+                message: Must be text/plain or text/csv.
+    TooManyRequests:
+      description: Rate limited. Retry after the time in `Retry-After`.
+      headers:
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Too Many Requests
+            status: 429
+            code: rate_limited
+    InternalError:
+      description: An unexpected error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Internal Server Error
+            status: 500
+            code: internal_error
+    Unavailable:
+      description: A dependency (database or storage) is down.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Service Unavailable
+            status: 503
+            code: dependency_unavailable
+
+  schemas:
+    # ---------- Enums ----------
+    UploadStatus:
+      type: string
+      description: |
+        Lifecycle of an upload's analysis job. `completed` means every stage
+        finished. `partial` means the job stopped early and can resume; see
+        `Upload.stop`. `failed` means nothing usable was saved.
+      enum: [queued, processing, completed, partial, failed]
+      example: completed
+    PipelineStage:
+      type: string
+      description: The pipeline stage the job is in, or last reached.
+      enum: [uploaded, parsing, detecting, judging, grouping, narrating, done]
+      example: done
+    UploadSource:
+      type: string
+      description: Whether the file came from the analyst or from a bundled sample.
+      enum: [upload, sample]
+      example: sample
+    Severity:
+      type: string
+      description: Incident severity, set by the backend. Clients never derive it.
+      enum: [critical, high, medium, low]
+      example: high
+    AiVerdict:
+      type: string
+      description: |
+        The AI's reading of the evidence. An interpretation, not a fact, and
+        it carries no percentage. It never changes the risk score.
+      enum: [likely_malicious, likely_benign, inconclusive]
+      example: likely_malicious
+    AnalystStatus:
+      type: string
+      description: The analyst's decision on an incident.
+      enum: [open, confirmed, dismissed, escalated]
+      example: open
+    VerdictStatus:
+      type: string
+      description: A decision the analyst can record. `open` is not a decision.
+      enum: [confirmed, dismissed, escalated]
+      example: confirmed
+    DetectorType:
+      type: string
+      description: |
+        The detector that raised an anomaly.
+        `threat_hit`: the proxy named a threat.
+        `blocked_burst`: many blocked requests in a short window.
+        `exfil_volume`: outbound bytes far above the user's baseline.
+        `beaconing`: requests to one host at a regular interval.
+        `rare_destination`: a host few or no other users reach.
+        `new_source_ip`: a user's requests come from an address they use nowhere else.
+        `off_hours`: activity outside the user's usual hours.
+      enum: [threat_hit, blocked_burst, exfil_volume, beaconing, rare_destination, new_source_ip, off_hours]
+      example: exfil_volume
+    DecisionProvider:
+      type: string
+      description: |
+        What produced a decision or narrative. `rules` means no model ran;
+        `mock` is the offline stand-in used in tests and demos.
+      enum: [jev, claude, mock, rules]
+      example: claude
+    NarrativeStatus:
+      type: string
+      description: |
+        `generated`: written by a model and every citation validated.
+        `template`: deterministic fallback text.
+        `unavailable`: no narrative; the AI layer was down.
+      enum: [generated, template, unavailable]
+      example: generated
+    LessonScopeType:
+      type: string
+      description: What a lesson matches on.
+      enum: [user, domain, pattern]
+      example: domain
+    GraphNodeType:
+      type: string
+      description: The kind of entity a graph node stands for.
+      enum: [user, host, domain, ip, data]
+      example: domain
+    EventAction:
+      type: string
+      description: What the proxy did with the request.
+      enum: [allowed, blocked]
+      example: allowed
+    EventSort:
+      type: string
+      description: Sort order for events. `ts` is oldest first; `-ts` is newest first.
+      enum: [ts, -ts]
+      default: ts
+    TimeseriesBucket:
+      type: string
+      description: Bucket width. The triage risk line uses `10m`; the volume bars use `1h`.
+      enum: [1m, 5m, 10m, 15m, 1h]
+      default: 5m
+    ContextSchemaVersion:
+      type: string
+      description: Version of the `IncidentContext` shape.
+      enum: ["1"]
+      example: "1"
+    SignalLayer:
+      type: string
+      description: |
+        The detection layer a signal came from. `rules` are fixed checks;
+        `baselines` compare against measured history. Neither uses a model.
+      enum: [rules, baselines]
+      example: baselines
+    BaselineSource:
+      type: string
+      description: |
+        Where a signal's baseline came from. `in_file`: this upload alone.
+        `earlier_uploads`: this upload plus earlier ones. `none`: the signal
+        needs no baseline.
+      enum: [in_file, earlier_uploads, none]
+      example: in_file
+    StopReason:
+      type: string
+      description: |
+        Why a job stopped early.
+        `parse_errors`: some lines could not be read; the analyst must accept or cancel.
+        `ai_unavailable`: the model could not be reached; risk scores and evidence are complete.
+        `stage_failed`: a stage hit an error partway through.
+      enum: [parse_errors, ai_unavailable, stage_failed]
+      example: ai_unavailable
+    StageState:
+      type: string
+      description: State of one pipeline stage.
+      enum: [pending, running, done, stopped, skipped]
+      example: done
+    AnomalyDisposition:
+      type: string
+      description: |
+        What became of an anomaly.
+        `in_incident`: grouped into an incident.
+        `below_threshold`: its risk score was under the threshold.
+        `judged_benign`: the AI decision set it aside.
+        `lesson`: an analyst's lesson set it aside.
+      enum: [in_incident, below_threshold, judged_benign, lesson]
+      example: in_incident
+    AnswerKeyLabel:
+      type: string
+      description: What the sample's answer key says a scoresheet row really was.
+      enum: [attack, benign]
+      example: attack
+    ScoreMark:
+      type: string
+      description: How the pipeline did on one scoresheet row.
+      enum: [caught, missed, false_positive]
+      example: caught
+    ProviderRole:
+      type: string
+      description: "`in_use` decisions drive results. `shadow` decisions are recorded for comparison only."
+      enum: [in_use, shadow]
+      example: in_use
+
+    # ---------- Shared ----------
+    TimeRange:
+      type: object
+      description: A closed time span.
+      required: [start, end]
+      properties:
+        start:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:14:00Z"
+        end:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:41:00Z"
+
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          description: Build version of the API.
+          example: 0.1.0
+
+    # ---------- Uploads ----------
+    UploadError:
+      type: object
+      description: Why an upload's job failed.
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable reason.
+          example: parse_failed
+        message:
+          type: string
+          example: No line matched the Zscaler web-proxy format.
+
+    Upload:
+      type: object
+      description: One log file and the state of its analysis job.
+      required: [id, filename, source, status, stage, progress, pipeline, riskThreshold, sizeBytes, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        filename:
+          type: string
+          example: northwind-zia-2026-10-08.log
+        source:
+          $ref: "#/components/schemas/UploadSource"
+        sampleName:
+          type: string
+          description: Set when `source` is `sample`.
+          example: sample-day
+        status:
+          $ref: "#/components/schemas/UploadStatus"
+        stage:
+          $ref: "#/components/schemas/PipelineStage"
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Percent of the job complete.
+          example: 100
+        sizeBytes:
+          type: integer
+          format: int64
+          example: 9874210
+        lineCount:
+          type: integer
+          description: Lines read from the file.
+          example: 48212
+        eventCount:
+          type: integer
+          description: Lines parsed into events.
+          example: 48190
+        parseErrorCount:
+          type: integer
+          description: Lines that could not be parsed.
+          example: 22
+        anomalyCount:
+          type: integer
+          example: 214
+        incidentCount:
+          type: integer
+          example: 3
+        timeRange:
+          $ref: "#/components/schemas/TimeRange"
+        error:
+          $ref: "#/components/schemas/UploadError"
+        pipeline:
+          type: array
+          description: One entry per stage after `uploaded`, in order. The UI folds `grouping` and `narrating` into "Writing report".
+          items:
+            $ref: "#/components/schemas/StageProgress"
+        stop:
+          $ref: "#/components/schemas/UploadStop"
+        firstParseError:
+          $ref: "#/components/schemas/ParseError"
+        riskThreshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Anomalies scoring at or above this can become incidents. Set by the backend; clients never hard-code it.
+          example: 30
+        userCount:
+          type: integer
+          description: Distinct users in the file.
+          example: 24
+        hostCount:
+          type: integer
+          description: Distinct devices in the file.
+          example: 31
+        verdictCounts:
+          $ref: "#/components/schemas/VerdictCounts"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-10-09T11:01:52Z"
+        startedAt:
+          type: string
+          format: date-time
+          description: When the latest analysis run began.
+          example: "2026-10-09T11:01:53Z"
+        completedAt:
+          type: string
+          format: date-time
+          example: "2026-10-09T11:02:40Z"
+
+    StageProgress:
+      type: object
+      description: One pipeline stage, for the pipeline view.
+      required: [stage, state]
+      properties:
+        stage:
+          $ref: "#/components/schemas/PipelineStage"
+        state:
+          $ref: "#/components/schemas/StageState"
+        countIn:
+          type: integer
+          description: Items the stage received (lines, then anomalies).
+          example: 198
+        processed:
+          type: integer
+          description: Items handled so far. Equals `countIn` when the stage is done.
+          example: 132
+        countOut:
+          type: integer
+          description: Items the stage kept and passed on. The rest were set aside.
+          example: 4
+        elapsedMs:
+          type: integer
+          example: 11000
+
+    UploadStop:
+      type: object
+      description: Where and why a job stopped early. Present when `status` is `partial`.
+      required: [stage, reason, message]
+      properties:
+        stage:
+          $ref: "#/components/schemas/PipelineStage"
+        reason:
+          $ref: "#/components/schemas/StopReason"
+        message:
+          type: string
+          description: One line for the analyst.
+          example: The AI model could not be reached. Risk scores and evidence are complete.
+
+    ParseError:
+      type: object
+      description: The first line that could not be parsed.
+      required: [lineNo, reason, sample]
+      properties:
+        lineNo:
+          type: integer
+          minimum: 1
+          example: 1203
+        reason:
+          type: string
+          example: expected 14 fields, found 9
+        sample:
+          type: string
+          description: The start of the bad line. Sensitive, like `Event.raw`.
+          example: 2026-10-09T06:02:11Z action=Allowed user=tom.h@northwindl
+
+    VerdictCounts:
+      type: object
+      description: Incidents of one upload, counted by analyst status.
+      required: [open, confirmed, dismissed, escalated]
+      properties:
+        open:
+          type: integer
+          example: 3
+        confirmed:
+          type: integer
+          example: 0
+        dismissed:
+          type: integer
+          example: 0
+        escalated:
+          type: integer
+          example: 0
+
+    AnalyzeRequest:
+      type: object
+      properties:
+        acceptParseErrors:
+          type: boolean
+          default: false
+          description: Analyze the good lines even though some could not be parsed.
+        restart:
+          type: boolean
+          default: false
+          description: Run every stage again instead of resuming where the last run stopped.
+
+    UploadPage:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Upload"
+        nextCursor:
+          type: string
+          description: Absent on the last page.
+        total:
+          type: integer
+          example: 4
+
+    CreateUploadRequest:
+      type: object
+      required: [filename, sizeBytes, contentType]
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: northwind-zia-2026-10-08.log
+        sizeBytes:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 52428800
+          description: File size in bytes. The cap is 50 MB.
+          example: 9874210
+        contentType:
+          type: string
+          description: MIME type of the file. `text/plain` and `text/csv` are accepted.
+          example: text/plain
+
+    CreateUploadResponse:
+      type: object
+      required: [upload, uploadUrl, expiresAt]
+      properties:
+        upload:
+          $ref: "#/components/schemas/Upload"
+        uploadUrl:
+          type: string
+          format: uri
+          description: Signed URL. `PUT` the file here, straight from the browser to storage.
+          example: https://abcdefgh.supabase.co/storage/v1/object/upload/sign/logs/7c9e6679-7425-40de-944b-e07fc1f90ae7?token=eyJ
+        expiresAt:
+          type: string
+          format: date-time
+          description: When `uploadUrl` stops working.
+          example: "2026-10-09T11:16:52Z"
+
+    ProgressCounts:
+      type: object
+      description: Running totals for one job.
+      required: [lines, events, anomalies, incidents]
+      properties:
+        lines:
+          type: integer
+          example: 48212
+        events:
+          type: integer
+          example: 48190
+        anomalies:
+          type: integer
+          example: 214
+        incidents:
+          type: integer
+          example: 3
+
+    ProgressEvent:
+      type: object
+      description: Payload of the `progress` and `done` server-sent events.
+      required: [uploadId, status, stage, progress, message, counts, pipeline, at]
+      properties:
+        uploadId:
+          type: string
+          format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        status:
+          $ref: "#/components/schemas/UploadStatus"
+        stage:
+          $ref: "#/components/schemas/PipelineStage"
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 45
+        message:
+          type: string
+          description: One line for the analyst.
+          example: Scoring 48,212 events
+        counts:
+          $ref: "#/components/schemas/ProgressCounts"
+        pipeline:
+          type: array
+          description: Same shape as `Upload.pipeline`.
+          items:
+            $ref: "#/components/schemas/StageProgress"
+        at:
+          type: string
+          format: date-time
+          example: "2026-10-09T11:02:11Z"
+
+    # ---------- Events ----------
+    EventPrincipal:
+      type: object
+      description: Who made the request.
+      required: [user, srcIp]
+      properties:
+        user:
+          type: string
+          example: dana.k
+        dept:
+          type: string
+          example: Finance
+        device:
+          type: string
+          description: The device hostname, when the log carries one.
+          example: LT-022
+        srcIp:
+          type: string
+          example: 203.0.113.47
+
+    EventTarget:
+      type: object
+      description: Where the request went.
+      required: [host, url, category]
+      properties:
+        host:
+          type: string
+          example: files-sync-cdn.net
+        url:
+          type: string
+          example: https://files-sync-cdn.net/api/v2/upload
+        category:
+          type: string
+          description: Zscaler URL category.
+          example: File Sharing
+        ip:
+          type: string
+          example: 192.0.2.80
+
+    EventNetwork:
+      type: object
+      description: HTTP details of the request.
+      required: [method, status, bytesOut, bytesIn]
+      properties:
+        method:
+          type: string
+          example: POST
+        status:
+          type: integer
+          description: HTTP response status.
+          example: 200
+        bytesOut:
+          type: integer
+          format: int64
+          description: Bytes sent by the client.
+          example: 1572864
+        bytesIn:
+          type: integer
+          format: int64
+          description: Bytes received by the client.
+          example: 412
+        userAgent:
+          type: string
+          example: curl/8.4.0
+
+    EventSecurityResult:
+      type: object
+      description: What the proxy decided, and why.
+      required: [action]
+      properties:
+        action:
+          $ref: "#/components/schemas/EventAction"
+        reason:
+          type: string
+          description: The proxy's policy reason.
+          example: Allowed
+        threatName:
+          type: string
+          example: Phish.Generic
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Zscaler's own page risk score, as logged.
+          example: 12
+
+    EventFlag:
+      type: object
+      description: One anomaly an event is evidence for, in a form short enough for a table cell.
+      required: [anomalyId, label, disposition]
+      properties:
+        anomalyId:
+          type: string
+          format: uuid
+          example: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+        label:
+          type: string
+          description: A few words, built from a fixed template.
+          example: bytes out 30× baseline
+        disposition:
+          $ref: "#/components/schemas/AnomalyDisposition"
+
+    Event:
+      type: object
+      description: One log line, normalized into a vendor-neutral shape modeled after Google SecOps UDM.
+      required: [id, lineNo, ts, principal, target, network, securityResult, flags, raw]
+      properties:
+        id:
+          type: string
+          pattern: "^e[0-9]+$"
+          description: "`e{lineNo}`. Unique within one upload."
+          example: e1042
+        lineNo:
+          type: integer
+          minimum: 1
+          description: 1-based line number in the uploaded file.
+          example: 1042
+        ts:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:14:07Z"
+        principal:
+          $ref: "#/components/schemas/EventPrincipal"
+        target:
+          $ref: "#/components/schemas/EventTarget"
+        network:
+          $ref: "#/components/schemas/EventNetwork"
+        securityResult:
+          $ref: "#/components/schemas/EventSecurityResult"
+        incidentId:
+          type: string
+          format: uuid
+          description: The incident this event is evidence for, if any.
+          example: 3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b
+        flags:
+          type: array
+          description: Why this event was flagged, one entry per anomaly it is evidence for. Empty if none.
+          items:
+            $ref: "#/components/schemas/EventFlag"
+        raw:
+          type: string
+          description: |
+            The original log line, unchanged. **Sensitive: this is customer
+            data.** Do not log it, cache it outside the user's session, or
+            send it to third parties.
+          example: "2026-10-08T06:17:41Z action=Allowed user=dana.k@northwindlabs.example clientip=203.0.113.47 devicehostname=LT-022 hostname=files-sync-cdn.net url=files-sync-cdn.net/api/v2/put requestmethod=POST status=200 urlcategory=Miscellaneous_or_Unknown requestsize=2306867 responsesize=412 threatname=None riskscore=78"
+
+    EventPage:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        nextCursor:
+          type: string
+          description: Absent on the last page.
+        total:
+          type: integer
+          description: Events matching the filters, across all pages.
+          example: 48190
+
+    TimeseriesPoint:
+      type: object
+      required: [ts, total, blocked, anomalous, peakRiskScore]
+      properties:
+        ts:
+          type: string
+          format: date-time
+          description: Start of the bucket.
+          example: "2026-10-08T06:10:00Z"
+        total:
+          type: integer
+          example: 187
+        blocked:
+          type: integer
+          example: 4
+        anomalous:
+          type: integer
+          description: Events tied to at least one anomaly.
+          example: 9
+        peakRiskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Highest risk score of any anomaly in the bucket, or 0.
+          example: 91
+
+    TimeseriesResponse:
+      type: object
+      required: [bucketSeconds, points]
+      properties:
+        bucketSeconds:
+          type: integer
+          description: Bucket width in seconds.
+          example: 300
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeseriesPoint"
+
+    # ---------- Detections ----------
+    Signal:
+      type: object
+      description: One measured fact behind an anomaly. Deterministic; no model writes it.
+      required: [name, description, weight, layer, observed, baselineSource, eventIds]
+      properties:
+        name:
+          type: string
+          example: bytes_out_vs_baseline
+        description:
+          type: string
+          description: Plain language, built from a fixed template.
+          example: Outbound bytes 30× this user's in-file median
+        weight:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Points this signal adds to the risk score. Set by fixed rules.
+          example: 34
+        layer:
+          $ref: "#/components/schemas/SignalLayer"
+        observed:
+          type: string
+          description: What was seen, formatted for display.
+          example: 40.2 MB
+        observedDetail:
+          type: string
+          example: in 23 minutes
+        baselineText:
+          type: string
+          description: What it was compared against, formatted for display. Absent when `baselineSource` is `none`.
+          example: 1.3 MB
+        baselineDetail:
+          type: string
+          example: per hour, median in this file
+        baselineSource:
+          $ref: "#/components/schemas/BaselineSource"
+        baselineUploadCount:
+          type: integer
+          description: Earlier uploads the baseline drew on. Set when `baselineSource` is `earlier_uploads`.
+          example: 3
+        value:
+          type: number
+          format: double
+          description: The observed value as a number, for agents. Absent when the signal is not numeric.
+          example: 42153574
+        baseline:
+          type: number
+          format: double
+          description: The baseline as a number, for agents.
+          example: 1363149
+        unit:
+          type: string
+          example: bytes
+        eventIds:
+          type: array
+          description: The events this signal rests on.
+          items:
+            type: string
+          example: [e1048, e1049, e1050]
+
+    Decision:
+      type: object
+      description: The fast AI decision on one anomaly, made in the background job.
+      required: [label, confidence, provider, latencyMs]
+      properties:
+        label:
+          $ref: "#/components/schemas/AiVerdict"
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: |
+            The model's own figure. Used to rank and to compare providers.
+            **Not a probability**; never show it as one, and it never enters
+            the risk score.
+          example: 0.93
+        provider:
+          $ref: "#/components/schemas/DecisionProvider"
+        latencyMs:
+          type: integer
+          example: 412
+        model:
+          type: string
+          description: Model ID, when a model ran.
+          example: claude-haiku-5-5
+
+    Anomaly:
+      type: object
+      description: One detector's finding, before grouping into incidents.
+      required: [id, uploadId, detector, reason, signals, riskScore, disposition, eventIds, firstSeen, lastSeen]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+        uploadId:
+          type: string
+          format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        detector:
+          $ref: "#/components/schemas/DetectorType"
+        reason:
+          type: string
+          description: One plain sentence on why this was flagged.
+          example: dana.k sent 40.2 MB to files-sync-cdn.net in 23 minutes, 30 times their median hour.
+        signals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Signal"
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Sum of the signal weights, capped at 100. Deterministic; no model is involved.
+          example: 91
+        decision:
+          $ref: "#/components/schemas/Decision"
+        shadowDecision:
+          $ref: "#/components/schemas/Decision"
+        disposition:
+          $ref: "#/components/schemas/AnomalyDisposition"
+        incidentId:
+          type: string
+          format: uuid
+          description: Set when `disposition` is `in_incident`.
+          example: 3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b
+        eventIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          example: [e1042, e1047, e1048]
+        user:
+          type: string
+          example: dana.k
+        host:
+          type: string
+          example: files-sync-cdn.net
+        firstSeen:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:14:07Z"
+        lastSeen:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:41:19Z"
+        suppressedByLessonId:
+          type: string
+          format: uuid
+          description: Set when a lesson suppressed this anomaly.
+
+    AnomalyPage:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Anomaly"
+        nextCursor:
+          type: string
+          description: Absent on the last page.
+        total:
+          type: integer
+          example: 214
+
+    # ---------- Incidents ----------
+    MitreTechnique:
+      type: object
+      description: A possible MITRE ATT&CK mapping. A reading of the evidence, not a finding.
+      required: [id, name, tactic]
+      properties:
+        id:
+          type: string
+          example: T1567
+        name:
+          type: string
+          example: Exfiltration Over Web Service
+        tactic:
+          type: string
+          example: Exfiltration
+
+    AnalystVerdict:
+      type: object
+      description: The human decision on an incident.
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/AnalystStatus"
+        note:
+          type: string
+          maxLength: 2000
+          example: Confirmed with Dana's manager; laptop isolated.
+        decidedAt:
+          type: string
+          format: date-time
+          description: Absent while `status` is `open`.
+          example: "2026-10-09T11:20:03Z"
+
+    IncidentPrincipal:
+      type: object
+      description: The user or host the incident centers on.
+      properties:
+        user:
+          type: string
+          example: dana.k
+        host:
+          type: string
+          description: The source workstation.
+          example: LT-022
+
+    IncidentSummary:
+      type: object
+      description: An incident as shown on a triage card.
+      required: [id, uploadId, title, severity, riskScore, markerLabel, principal, timeRange, eventCount, anomalyCount, mitre, analystVerdict]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b
+        uploadId:
+          type: string
+          format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        title:
+          type: string
+          example: Off-hours upload to a first-seen domain
+        severity:
+          $ref: "#/components/schemas/Severity"
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: |
+            Sum of the weights of the signals that fired, capped at 100.
+            Deterministic; no model is involved. This is the score the analyst
+            ranks by. It measures how unusual the activity is, not the odds
+            that it is an attack.
+          example: 91
+        aiVerdict:
+          $ref: "#/components/schemas/AiVerdict"
+        summary:
+          type: string
+          description: One or two sentences of AI interpretation for the triage card. Absent, like `aiVerdict`, when the AI did not run.
+          example: Requests for dana.k came from an address new to this account. Then 40.2 MB went to files-sync-cdn.net in 24 minutes.
+        markerLabel:
+          type: string
+          description: A few words for the timeline callout. Built from a fixed template.
+          example: 40 MB out
+        markerDetail:
+          type: string
+          example: 30× median
+        assignee:
+          $ref: "#/components/schemas/Assignee"
+        principal:
+          $ref: "#/components/schemas/IncidentPrincipal"
+        timeRange:
+          $ref: "#/components/schemas/TimeRange"
+        eventCount:
+          type: integer
+          example: 23
+        anomalyCount:
+          type: integer
+          example: 4
+        mitre:
+          type: array
+          items:
+            $ref: "#/components/schemas/MitreTechnique"
+        analystVerdict:
+          $ref: "#/components/schemas/AnalystVerdict"
+
+    NarrativeSentence:
+      type: object
+      description: One sentence of the AI narrative and the events it rests on.
+      required: [text, citations]
+      properties:
+        text:
+          type: string
+          example: Over the next 23 minutes, 19 POST requests carried 40.2 MB out, about 30 times this user's median hour of 1.3 MB.
+        citations:
+          type: array
+          minItems: 1
+          description: Event IDs. A citation shows where a sentence came from, not that it is right.
+          items:
+            type: string
+          example: [e1042, e1047, e1048]
+
+    Narrative:
+      type: object
+      description: |
+        The AI's account of an incident. Every citation is validated
+        server-side to be a subset of `evidenceEventIds`. If validation fails,
+        a deterministic template narrative is returned with
+        `status: template`.
+      required: [status, sentences, nextSteps]
+      properties:
+        status:
+          $ref: "#/components/schemas/NarrativeStatus"
+        provider:
+          $ref: "#/components/schemas/DecisionProvider"
+        sentences:
+          type: array
+          description: Empty when `status` is `unavailable`.
+          items:
+            $ref: "#/components/schemas/NarrativeSentence"
+        nextSteps:
+          type: array
+          description: Suggested analyst actions.
+          items:
+            type: string
+          example:
+            - Ask dana.k whether the 02:14 transfer was expected.
+            - Check who else reached files-sync-cdn.net this week.
+        generatedAt:
+          type: string
+          format: date-time
+          example: "2026-10-09T11:02:38Z"
+
+    TimelineItem:
+      type: object
+      description: One step in an incident's timeline.
+      required: [ts, eventId, label, kind]
+      properties:
+        ts:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:14:07Z"
+        eventId:
+          type: string
+          example: e1042
+        label:
+          type: string
+          example: First upload to files-sync-cdn.net (1.5 MB)
+        kind:
+          type: string
+          description: Short machine-readable tag for the icon, such as `first_seen`, `transfer`, `blocked`, or `threat`.
+          example: first_seen
+
+    GraphNode:
+      type: object
+      required: [id, type, label, flagged, neighbour, eventIds]
+      properties:
+        id:
+          type: string
+          example: domain:files-sync-cdn.net
+        type:
+          $ref: "#/components/schemas/GraphNodeType"
+        label:
+          type: string
+          example: files-sync-cdn.net
+        sublabel:
+          type: string
+          example: uncategorized · first seen
+        flagged:
+          type: boolean
+          description: A signal names this entity.
+          example: true
+        neighbour:
+          type: boolean
+          description: Context only. Hidden until the analyst expands neighbours.
+          example: false
+        eventIds:
+          type: array
+          description: Events that involve this entity. Clicking the node selects them.
+          items:
+            type: string
+          example: [e1047, e1048, e1049]
+        x:
+          type: number
+          format: double
+          description: Suggested position. When absent, the UI lays nodes out left to right.
+          example: 480
+        y:
+          type: number
+          format: double
+          example: 120
+
+    GraphEdge:
+      type: object
+      required: [id, source, target, flagged, eventCount, eventIds]
+      properties:
+        id:
+          type: string
+          example: ip:203.0.113.47>domain:files-sync-cdn.net
+        source:
+          type: string
+          description: A `GraphNode.id`.
+          example: ip:203.0.113.47
+        target:
+          type: string
+          description: A `GraphNode.id`.
+          example: domain:files-sync-cdn.net
+        label:
+          type: string
+          example: "02:17"
+        flagged:
+          type: boolean
+          description: A signal names this connection.
+          example: true
+        bytes:
+          type: integer
+          format: int64
+          description: Total bytes out along this edge. Sets its width.
+          example: 42153574
+        eventCount:
+          type: integer
+          example: 21
+        eventIds:
+          type: array
+          items:
+            type: string
+          example: [e1047, e1048, e1049]
+
+    IncidentGraph:
+      type: object
+      description: The activity graph, the entities in an incident and how they connect.
+      required: [nodes, edges]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphEdge"
+
+    IncidentDetail:
+      description: An incident with everything the incident screen draws.
+      allOf:
+        - $ref: "#/components/schemas/IncidentSummary"
+        - type: object
+          required: [narrative, signals, timeline, graph, indicators, chart, notes, lessonSuggestions, evidenceEventIds, evidence]
+          properties:
+            narrative:
+              $ref: "#/components/schemas/Narrative"
+            signals:
+              type: array
+              description: The signals that fired, heaviest first. Their weights sum to `riskScore`, capped at 100.
+              items:
+                $ref: "#/components/schemas/Signal"
+            timeline:
+              type: array
+              items:
+                $ref: "#/components/schemas/TimelineItem"
+            graph:
+              $ref: "#/components/schemas/IncidentGraph"
+            indicators:
+              type: array
+              description: The entities worth copying or pivoting on.
+              items:
+                $ref: "#/components/schemas/Indicator"
+            chart:
+              $ref: "#/components/schemas/IncidentChart"
+            notes:
+              type: array
+              description: Analyst notes, oldest first.
+              items:
+                $ref: "#/components/schemas/IncidentNote"
+            lessonSuggestions:
+              type: array
+              description: Scopes the analyst can pick in the "teach it once" dialog.
+              items:
+                $ref: "#/components/schemas/LessonSuggestion"
+            evidenceEventIds:
+              type: array
+              description: Every event behind this incident. Citations must come from this set.
+              items:
+                type: string
+              example: [e1042, e1047, e1048]
+            evidence:
+              type: array
+              maxItems: 500
+              description: The evidence events, in time order, capped at 500. Page the rest with `listEvents`.
+              items:
+                $ref: "#/components/schemas/Event"
+
+    Assignee:
+      type: object
+      description: The analyst who owns an incident.
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 5a1c3e7b-9d2f-4b6a-8c0e-1f3a5b7d9e2c
+        name:
+          type: string
+          example: sam.r
+
+    Indicator:
+      type: object
+      description: One entity in an incident, with how often it appears in the whole upload.
+      required: [type, value, eventCount]
+      properties:
+        type:
+          $ref: "#/components/schemas/GraphNodeType"
+        value:
+          type: string
+          example: files-sync-cdn.net
+        eventCount:
+          type: integer
+          description: Events in the upload that involve it.
+          example: 21
+
+    IncidentChart:
+      type: object
+      description: Frame for the bytes-out chart. The bars themselves come from `evidence`.
+      required: [window]
+      properties:
+        window:
+          $ref: "#/components/schemas/TimeRange"
+        baselineBytesOut:
+          type: integer
+          format: int64
+          description: This user's median request size in the file, outside the incident. Absent when there is no baseline.
+          example: 98304
+        baselineLabel:
+          type: string
+          example: "median: under 0.1 MB"
+
+    IncidentNote:
+      type: object
+      required: [id, author, text, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c4d5e6f7-a8b9-4c0d-9e1f-2a3b4c5d6e7f
+        author:
+          type: string
+          example: j.ortiz
+        text:
+          type: string
+          example: Seen at handover from the night shift. Not yet investigated.
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-10-09T11:58:00Z"
+
+    LessonSuggestion:
+      type: object
+      description: One ready-made lesson scope, drawn from the incident's evidence.
+      required: [scope, label]
+      properties:
+        scope:
+          $ref: "#/components/schemas/LessonScope"
+        label:
+          type: string
+          description: The scope in plain words.
+          example: large uploads, 01:00–04:00 ET, to online storage
+
+    UpdateIncidentRequest:
+      type: object
+      required: [assignedToMe]
+      properties:
+        assignedToMe:
+          type: boolean
+          description: "`true` assigns the incident to the caller; `false` clears the assignee."
+
+    AddNoteRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          example: Called Dana; she was asleep at 02:14.
+
+    VerdictRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/VerdictStatus"
+        note:
+          type: string
+          description: Saved as an analyst note.
+          maxLength: 2000
+          example: Approved vendor backup; Dana confirmed.
+        lesson:
+          $ref: "#/components/schemas/LessonCreate"
+
+    # ---------- Agent context ----------
+    ContextEntities:
+      type: object
+      required: [users, hosts, domains, ips]
+      properties:
+        users:
+          type: array
+          items:
+            type: string
+          example: [dana.k]
+        hosts:
+          type: array
+          items:
+            type: string
+          example: [LT-022]
+        domains:
+          type: array
+          items:
+            type: string
+          example: [files-sync-cdn.net]
+        ips:
+          type: array
+          items:
+            type: string
+          example: [203.0.113.47, 192.0.2.80]
+
+    ContextTimelineItem:
+      type: object
+      required: [ts, eventId, label]
+      properties:
+        ts:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:14:07Z"
+        eventId:
+          type: string
+          example: e1042
+        label:
+          type: string
+          example: First upload to files-sync-cdn.net (1.5 MB)
+
+    ContextEvidence:
+      type: object
+      description: A trimmed event. Fetch the full `Event` by ID when more is needed.
+      required: [id, ts, user, host, action, bytesOut]
+      properties:
+        id:
+          type: string
+          example: e1042
+        ts:
+          type: string
+          format: date-time
+          example: "2026-10-08T06:14:07Z"
+        user:
+          type: string
+          example: dana.k
+        host:
+          type: string
+          description: The destination host.
+          example: files-sync-cdn.net
+        action:
+          $ref: "#/components/schemas/EventAction"
+        bytesOut:
+          type: integer
+          format: int64
+          example: 1572864
+        threatName:
+          type: string
+          example: Phish.Generic
+
+    ContextProvenance:
+      type: object
+      description: What produced this incident, so an agent can weigh it.
+      required: [detectors, decisionProvider, generatedAt]
+      properties:
+        detectors:
+          type: array
+          items:
+            $ref: "#/components/schemas/DetectorType"
+        decisionProvider:
+          $ref: "#/components/schemas/DecisionProvider"
+        narrativeProvider:
+          $ref: "#/components/schemas/DecisionProvider"
+        generatedAt:
+          type: string
+          format: date-time
+          example: "2026-10-09T11:02:38Z"
+
+    IncidentContext:
+      type: object
+      description: |
+        Compact, cited, typed representation of an incident for downstream AI
+        agents. Minimal fields to reduce tokens.
+      required: [schemaVersion, incidentId, summary, riskScore, severity, analystStatus, entities, timeline, evidence, mitre, recommendedActions, provenance, tokenEstimate]
+      properties:
+        schemaVersion:
+          $ref: "#/components/schemas/ContextSchemaVersion"
+        incidentId:
+          type: string
+          format: uuid
+          example: 3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b
+        summary:
+          type: string
+          description: One or two sentences.
+          example: dana.k sent 40.2 MB to files-sync-cdn.net between 06:17 and 06:41 UTC, about 30 times their median hour.
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Rule-based score. See `IncidentSummary.riskScore`.
+          example: 91
+        aiVerdict:
+          $ref: "#/components/schemas/AiVerdict"
+        severity:
+          $ref: "#/components/schemas/Severity"
+        analystStatus:
+          $ref: "#/components/schemas/AnalystStatus"
+        entities:
+          $ref: "#/components/schemas/ContextEntities"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextTimelineItem"
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContextEvidence"
+        mitre:
+          type: array
+          items:
+            $ref: "#/components/schemas/MitreTechnique"
+        recommendedActions:
+          type: array
+          items:
+            type: string
+          example:
+            - Ask dana.k whether the 02:14 transfer was expected.
+        provenance:
+          $ref: "#/components/schemas/ContextProvenance"
+        tokenEstimate:
+          type: integer
+          description: Rough token count of this payload.
+          example: 640
+
+    # ---------- Lessons ----------
+    LessonScope:
+      type: object
+      description: What a lesson applies to.
+      required: [type, value]
+      properties:
+        type:
+          $ref: "#/components/schemas/LessonScopeType"
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: A username, a domain, or a pattern such as `*.backup-vendor.com`.
+          example: s3.us-west.backblazeb2.com
+
+    LessonCreate:
+      type: object
+      required: [text, scope, expiresAt]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: The analyst's reason, in their words.
+          example: This is our nightly backup server.
+        scope:
+          $ref: "#/components/schemas/LessonScope"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Lessons always expire, so a stale exception cannot hide an attack forever.
+          example: "2027-01-08T00:00:00Z"
+
+    Lesson:
+      type: object
+      description: Something an analyst taught the system once.
+      required: [id, text, scope, createdAt, expiresAt, matchCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        text:
+          type: string
+          example: This is our nightly backup server.
+        scope:
+          $ref: "#/components/schemas/LessonScope"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-10-09T11:20:03Z"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2027-01-08T00:00:00Z"
+        matchCount:
+          type: integer
+          description: Anomalies this lesson has suppressed so far.
+          example: 37
+
+    LessonPreviewRequest:
+      type: object
+      required: [uploadId, scope]
+      properties:
+        uploadId:
+          type: string
+          format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        scope:
+          $ref: "#/components/schemas/LessonScope"
+
+    LessonPreviewResponse:
+      type: object
+      required: [wouldSuppressAnomalies, wouldResolveIncidents]
+      properties:
+        wouldSuppressAnomalies:
+          type: integer
+          example: 37
+        wouldResolveIncidents:
+          type: integer
+          description: Incidents left with no unsuppressed anomalies.
+          example: 1
+
+    # ---------- Samples and evaluation ----------
+    Sample:
+      type: object
+      description: A bundled demo log file.
+      required: [name, title, description, lineCount, sizeBytes, hasAnswerKey]
+      properties:
+        name:
+          type: string
+          example: sample-day
+        title:
+          type: string
+          example: Northwind Labs, sample day
+        description:
+          type: string
+          example: One day of proxy traffic with three planted attacks.
+        lineCount:
+          type: integer
+          example: 50000
+        sizeBytes:
+          type: integer
+          format: int64
+          example: 9874210
+        hasAnswerKey:
+          type: boolean
+          description: Whether `getEvalReport` works for uploads of this sample.
+          example: true
+
+    ScoresheetRow:
+      type: object
+      description: |
+        One line of the scoresheet: an incident the pipeline raised, marked
+        against the answer key, or a planted attack it missed.
+      required: [title, subtitle, layers, answerKey, mark]
+      properties:
+        title:
+          type: string
+          example: Large outbound transfer
+        subtitle:
+          type: string
+          example: dana.k · T1567
+        incidentId:
+          type: string
+          format: uuid
+          description: Absent when `mark` is `missed`.
+          example: 3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b
+        layers:
+          type: array
+          description: The detection layers that flagged it.
+          items:
+            $ref: "#/components/schemas/SignalLayer"
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 91
+        aiVerdict:
+          $ref: "#/components/schemas/AiVerdict"
+        answerKey:
+          $ref: "#/components/schemas/AnswerKeyLabel"
+        mark:
+          $ref: "#/components/schemas/ScoreMark"
+
+    JudgeAgreement:
+      type: object
+      description: How often the two decision providers gave the same label.
+      required: [total, agreed]
+      properties:
+        total:
+          type: integer
+          description: Anomalies both providers ruled on.
+          example: 221
+        agreed:
+          type: integer
+          example: 208
+
+    ProviderScore:
+      type: object
+      description: How one decision provider did against the answer key.
+      required: [provider, label, role, decisions, attacksCaught, attacksTotal, falsePositives, agreementWithAnswerKey, avgLatencyMs, costPer1kUsd]
+      properties:
+        provider:
+          $ref: "#/components/schemas/DecisionProvider"
+        label:
+          type: string
+          description: Display name.
+          example: Fast typed-decision model
+        role:
+          $ref: "#/components/schemas/ProviderRole"
+        decisions:
+          type: integer
+          example: 221
+        attacksCaught:
+          type: integer
+          example: 3
+        attacksTotal:
+          type: integer
+          example: 3
+        falsePositives:
+          type: integer
+          description: Incidents this provider would have raised that the answer key calls benign.
+          example: 2
+        agreementWithAnswerKey:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          example: 0.96
+        avgLatencyMs:
+          type: number
+          format: double
+          example: 412
+        costPer1kUsd:
+          type: number
+          format: double
+          description: Cost in US dollars per 1,000 decisions.
+          example: 0.85
+
+    EvalReport:
+      type: object
+      description: The detection scorecard for one sample upload.
+      required: [uploadId, sampleName, runAt, lineCount, anomalyCount, incidentCount, scoresheet, truePositives, falsePositives, falseNegatives, precision, recall, judgeAgreement, providers]
+      properties:
+        uploadId:
+          type: string
+          format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        sampleName:
+          type: string
+          example: sample-day
+        runAt:
+          type: string
+          format: date-time
+          example: "2026-10-06T19:44:00Z"
+        lineCount:
+          type: integer
+          example: 50000
+        anomalyCount:
+          type: integer
+          example: 221
+        incidentCount:
+          type: integer
+          example: 5
+        scoresheet:
+          type: array
+          description: One row per incident raised, then one per planted attack that was missed.
+          items:
+            $ref: "#/components/schemas/ScoresheetRow"
+        judgeAgreement:
+          $ref: "#/components/schemas/JudgeAgreement"
+        truePositives:
+          type: integer
+          description: Planted attacks that became incidents.
+          example: 3
+        falsePositives:
+          type: integer
+          description: Incidents the answer key calls benign.
+          example: 2
+        falseNegatives:
+          type: integer
+          example: 0
+        precision:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          example: 0.6
+        recall:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          example: 1
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderScore"
+
+    # ---------- Errors ----------
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          example: contentType
+        message:
+          type: string
+          example: Must be text/plain or text/csv.
+
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details, plus a machine-readable `code`.
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          description: A URI naming the problem type. `about:blank` when there is nothing more to say.
+          example: about:blank
+        title:
+          type: string
+          example: Payload Too Large
+        status:
+          type: integer
+          example: 413
+        detail:
+          type: string
+          example: Files may be at most 52428800 bytes.
+        instance:
+          type: string
+          description: The request path.
+          example: /v1/uploads
+        code:
+          type: string
+          description: Stable, machine-readable error code.
+          example: upload_too_large
+        errors:
+          type: array
+          description: Per-field failures, on `422`.
+          items:
+            $ref: "#/components/schemas/FieldError"

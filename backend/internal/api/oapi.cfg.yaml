@@ -1,0 +1,12 @@
+# oapi-codegen config. Run through `make generate`; do not edit api.gen.go.
+package: api
+output: api.gen.go
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true
+compatibility:
+  # UploadSourceUpload, not Upload: enum constants never collide with types.
+  always-prefix-enum-values: true
+output-options:
+  skip-prune: true

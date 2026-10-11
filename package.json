@@ -1,0 +1,14 @@
+{
+  "name": "tenfold-contract",
+  "private": true,
+  "description": "Tooling for the OpenAPI contract: lint and TypeScript type generation.",
+  "scripts": {
+    "lint:api": "redocly lint api/openapi.yaml",
+    "generate:ts": "openapi-typescript api/openapi.yaml -o frontend/src/lib/api/schema.d.ts"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.62.1",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

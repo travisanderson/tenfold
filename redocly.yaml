@@ -1,0 +1,15 @@
+extends:
+  - recommended
+
+rules:
+  # A private POC; no license to declare.
+  info-license: off
+  # The only server so far is local development.
+  no-server-example.com: off
+  # ProgressEvent is the SSE payload. A text/event-stream body cannot $ref it,
+  # but both generators still need the type.
+  no-unused-components: off
+  operation-operationId: error
+  operation-4xx-response: error
+  no-invalid-media-type-examples: error
+  no-invalid-schema-examples: error
