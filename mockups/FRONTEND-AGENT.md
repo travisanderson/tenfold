@@ -72,6 +72,8 @@ The contract in `api/openapi.yaml` wins on these points.
 - **Upload states.** Malformed log, Partial results and AI unavailable are all `status = partial`; tell them apart by `stop.reason`. Their buttons call `analyzeUpload` (resume, or `acceptParseErrors`) or `deleteUpload`.
 - **Status and owner.** "Status: New" is `analystVerdict.status = open`. "Assign to me" calls `updateIncident`.
 - **Derived in the frontend.** "Caught, sent to you" is a `caught` row whose assessment is `inconclusive`. "0 of 3 decided" comes from `verdictCounts`. Citation ranges such as `e1048–e1066` are formatted from the ID list.
+- **Raw log lines.** The real line has 21 `key=value` fields separated by tabs (`time`, `login`, `cip`, `host`, `urlcat`, `reqsize`, ...), not the 14 space-separated fields drawn in `03` and `04`. Split `raw` on tabs to list them. Source IPs are internal (`10.20.x.x`).
+- **Demo data.** The sample is `attack-day`: 48,002 lines, four planted attacks and three decoys, so triage may show more than three incidents.
 - **Not in the contract yet.** Clicking a pipeline stage to see dropped lines, and the "See them" link in the dismiss dialog. Leave both out.
 
 ---

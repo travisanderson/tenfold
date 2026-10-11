@@ -8,7 +8,7 @@ GENERATED := \
 	backend/internal/api/openapi.gen.yaml \
 	frontend/src/lib/api/schema.d.ts
 
-.PHONY: lint generate generate-go generate-ts check-drift
+.PHONY: lint generate generate-go generate-ts check-drift samples test
 
 lint:
 	npm run -s lint:api
@@ -20,6 +20,14 @@ generate-go:
 
 generate-ts:
 	npm run -s generate:ts
+
+# Writes the demo logs and their answer keys. Same seed, same bytes.
+# The samples folder, generator included, is kept out of version control.
+samples:
+	cd samples && $(GO) run ./loggen --all --seed 42
+
+test:
+	cd backend && $(GO) test ./...
 
 # Fails if the committed generated files do not match the spec.
 check-drift: generate

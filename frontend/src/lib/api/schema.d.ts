@@ -753,7 +753,7 @@ export interface components {
             source: components["schemas"]["UploadSource"];
             /**
              * @description Set when `source` is `sample`.
-             * @example sample-day
+             * @example attack-day
              */
             sampleName?: string;
             status: components["schemas"]["UploadStatus"];
@@ -1078,10 +1078,11 @@ export interface components {
             /** @description Why this event was flagged, one entry per anomaly it is evidence for. Empty if none. */
             flags: components["schemas"]["EventFlag"][];
             /**
-             * @description The original log line, unchanged. **Sensitive: this is customer
+             * @description The original log line, unchanged: `key=value` pairs separated
+             *     by tabs. **Sensitive: this is customer
              *     data.** Do not log it, cache it outside the user's session, or
              *     send it to third parties.
-             * @example 2026-10-08T06:17:41Z action=Allowed user=dana.k@northwindlabs.example clientip=203.0.113.47 devicehostname=LT-022 hostname=files-sync-cdn.net url=files-sync-cdn.net/api/v2/put requestmethod=POST status=200 urlcategory=Miscellaneous_or_Unknown requestsize=2306867 responsesize=412 threatname=None riskscore=78
+             * @example time=2026-10-08T06:17:41Z	recordid=649	login=dana.k@northwindlabs.example	dept=Finance	cip=10.20.99.47	sip=192.0.2.36	host=files-sync-cdn.net	url=https://files-sync-cdn.net/api/v2/put	urlcat=Miscellaneous or Unknown	action=Allowed	reason=Allowed	reqmethod=POST	respcode=200	reqsize=2125038	respsize=418	ua=curl/8.4.0	appname=General Browsing	appclass=General Browsing	devicehostname=LT-022	threatname=None	riskscore=78
              */
             raw: string;
         };
@@ -1770,17 +1771,17 @@ export interface components {
         };
         /** @description A bundled demo log file. */
         Sample: {
-            /** @example sample-day */
+            /** @example attack-day */
             name: string;
-            /** @example Northwind Labs, sample day */
+            /** @example Northwind Labs, attack day */
             title: string;
-            /** @example One day of proxy traffic with three planted attacks. */
+            /** @example One day of proxy traffic with four planted attacks and three benign decoys. */
             description: string;
-            /** @example 50000 */
+            /** @example 48002 */
             lineCount: number;
             /**
              * Format: int64
-             * @example 9874210
+             * @example 24195844
              */
             sizeBytes: number;
             /**
@@ -1866,7 +1867,7 @@ export interface components {
              * @example 7c9e6679-7425-40de-944b-e07fc1f90ae7
              */
             uploadId: string;
-            /** @example sample-day */
+            /** @example attack-day */
             sampleName: string;
             /**
              * Format: date-time
@@ -2122,7 +2123,7 @@ export interface components {
         LessonId: string;
         /**
          * @description The sample's name, as returned by `listSamples`.
-         * @example sample-day
+         * @example attack-day
          */
         SampleName: string;
         /** @description Opaque cursor from the previous page's `nextCursor`. Omit for the first page. */
@@ -2416,7 +2417,7 @@ export interface operations {
                 user?: string;
                 /**
                  * @description Exact match on `principal.srcIp`.
-                 * @example 203.0.113.47
+                 * @example 10.20.99.47
                  */
                 srcIp?: string;
                 /**
@@ -2972,7 +2973,7 @@ export interface operations {
             path: {
                 /**
                  * @description The sample's name, as returned by `listSamples`.
-                 * @example sample-day
+                 * @example attack-day
                  */
                 sampleName: components["parameters"]["SampleName"];
             };

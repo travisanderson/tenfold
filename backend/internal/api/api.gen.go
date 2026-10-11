@@ -910,7 +910,7 @@ type EvalReport struct {
 	// RunAt Example: 2026-10-06T19:44:00Z
 	RunAt time.Time `json:"runAt"`
 
-	// SampleName Example: sample-day
+	// SampleName Example: attack-day
 	SampleName string `json:"sampleName"`
 
 	// Scoresheet One row per incident raised, then one per planted attack that was missed.
@@ -951,12 +951,13 @@ type Event struct {
 	// Principal Who made the request.
 	Principal EventPrincipal `json:"principal"`
 
-	// Raw The original log line, unchanged. **Sensitive: this is customer
+	// Raw The original log line, unchanged: `key=value` pairs separated
+	// by tabs. **Sensitive: this is customer
 	// data.** Do not log it, cache it outside the user's session, or
 	// send it to third parties.
 	//
 	//
-	// Example: 2026-10-08T06:17:41Z action=Allowed user=dana.k@northwindlabs.example clientip=203.0.113.47 devicehostname=LT-022 hostname=files-sync-cdn.net url=files-sync-cdn.net/api/v2/put requestmethod=POST status=200 urlcategory=Miscellaneous_or_Unknown requestsize=2306867 responsesize=412 threatname=None riskscore=78
+	// Example: time=2026-10-08T06:17:41Z	recordid=649	login=dana.k@northwindlabs.example	dept=Finance	cip=10.20.99.47	sip=192.0.2.36	host=files-sync-cdn.net	url=https://files-sync-cdn.net/api/v2/put	urlcat=Miscellaneous or Unknown	action=Allowed	reason=Allowed	reqmethod=POST	respcode=200	reqsize=2125038	respsize=418	ua=curl/8.4.0	appname=General Browsing	appclass=General Browsing	devicehostname=LT-022	threatname=None	riskscore=78
 	Raw string `json:"raw"`
 
 	// SecurityResult What the proxy decided, and why.
@@ -1782,7 +1783,7 @@ type ProviderScore struct {
 
 // Sample A bundled demo log file.
 type Sample struct {
-	// Description Example: One day of proxy traffic with three planted attacks.
+	// Description Example: One day of proxy traffic with four planted attacks and three benign decoys.
 	Description string `json:"description"`
 
 	// HasAnswerKey Whether `getEvalReport` works for uploads of this sample.
@@ -1790,16 +1791,16 @@ type Sample struct {
 	// Example: true
 	HasAnswerKey bool `json:"hasAnswerKey"`
 
-	// LineCount Example: 50000
+	// LineCount Example: 48002
 	LineCount int `json:"lineCount"`
 
-	// Name Example: sample-day
+	// Name Example: attack-day
 	Name string `json:"name"`
 
-	// SizeBytes Example: 9874210
+	// SizeBytes Example: 24195844
 	SizeBytes int64 `json:"sizeBytes"`
 
-	// Title Example: Northwind Labs, sample day
+	// Title Example: Northwind Labs, attack day
 	Title string `json:"title"`
 }
 
@@ -2100,7 +2101,7 @@ type Upload struct {
 
 	// SampleName Set when `source` is `sample`.
 	//
-	// Example: sample-day
+	// Example: attack-day
 	SampleName *string `json:"sampleName,omitempty"`
 
 	// SizeBytes Example: 9874210

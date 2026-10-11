@@ -374,7 +374,7 @@ paths:
           description: Exact match on `principal.srcIp`.
           schema:
             type: string
-          example: 203.0.113.47
+          example: 10.20.99.47
         - name: host
           in: query
           description: Exact match on `target.host`.
@@ -1025,7 +1025,7 @@ components:
         type: string
         pattern: "^[a-z0-9][a-z0-9-]*$"
         maxLength: 64
-      example: sample-day
+      example: attack-day
     Cursor:
       name: cursor
       in: query
@@ -1373,7 +1373,7 @@ components:
         sampleName:
           type: string
           description: Set when `source` is `sample`.
-          example: sample-day
+          example: attack-day
         status:
           $ref: "#/components/schemas/UploadStatus"
         stage:
@@ -1782,10 +1782,11 @@ components:
         raw:
           type: string
           description: |
-            The original log line, unchanged. **Sensitive: this is customer
+            The original log line, unchanged: `key=value` pairs separated
+            by tabs. **Sensitive: this is customer
             data.** Do not log it, cache it outside the user's session, or
             send it to third parties.
-          example: "2026-10-08T06:17:41Z action=Allowed user=dana.k@northwindlabs.example clientip=203.0.113.47 devicehostname=LT-022 hostname=files-sync-cdn.net url=files-sync-cdn.net/api/v2/put requestmethod=POST status=200 urlcategory=Miscellaneous_or_Unknown requestsize=2306867 responsesize=412 threatname=None riskscore=78"
+          example: "time=2026-10-08T06:17:41Z\trecordid=649\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2125038\trespsize=418\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78"
 
     EventPage:
       type: object
@@ -2663,20 +2664,20 @@ components:
       properties:
         name:
           type: string
-          example: sample-day
+          example: attack-day
         title:
           type: string
-          example: Northwind Labs, sample day
+          example: Northwind Labs, attack day
         description:
           type: string
-          example: One day of proxy traffic with three planted attacks.
+          example: One day of proxy traffic with four planted attacks and three benign decoys.
         lineCount:
           type: integer
-          example: 50000
+          example: 48002
         sizeBytes:
           type: integer
           format: int64
-          example: 9874210
+          example: 24195844
         hasAnswerKey:
           type: boolean
           description: Whether `getEvalReport` works for uploads of this sample.
@@ -2783,7 +2784,7 @@ components:
           example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
         sampleName:
           type: string
-          example: sample-day
+          example: attack-day
         runAt:
           type: string
           format: date-time
