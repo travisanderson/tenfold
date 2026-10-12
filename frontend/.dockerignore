@@ -1,0 +1,11 @@
+# Keep local secrets and build leftovers out of the image.
+.env*
+!.env.example
+.vercel
+.next
+node_modules
+test-results
+playwright-report
+tests
+*.tsbuildinfo
+Dockerfile
