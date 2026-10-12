@@ -67,13 +67,17 @@ Two kinds of test are skipped unless their input exists:
 
 ## Deploy
 
-Railway builds `Dockerfile` and runs the binary. It needs three variables:
-`DATABASE_URL`, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`. Railway sets
-`PORT` itself.
+A push to `main` deploys the API. Railway watches `backend/`, builds
+`Dockerfile` and runs the binary. A push that changes nothing under
+`backend/` leaves the API alone.
 
-```sh
-railway up                    # from backend/
-```
+The service needs `DATABASE_URL`, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`,
+plus the AI settings described below and the keys they call for. Railway
+sets `PORT` itself. The server refuses to start without a setting it needs,
+so check the variables before you push.
+
+A deploy restarts the server. An analysis running at that moment shows as
+stopped and can be resumed.
 
 ## How it fits together
 
