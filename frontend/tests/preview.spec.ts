@@ -1,15 +1,43 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+async function loadPreview(page: Page, route: string) {
+  await page.goto("/uploads");
+  await page
+    .getByRole("button", { name: "Load demo data", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "moments crossed the anomaly threshold.",
+    }),
+  ).toBeVisible();
+  if (route.startsWith("/incidents/")) {
+    await page
+      .getByRole("link", { name: "Open incident", exact: true })
+      .first()
+      .click();
+  } else if (route !== "/triage") {
+    const label = {
+      "/events": "Events",
+      "/scorecard": "Scorecard",
+      "/uploads": "Uploads",
+    }[route];
+    if (!label) throw new Error(`Unsupported preview route: ${route}`);
+    await page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: label, exact: true })
+      .click();
+  }
+}
 for (const width of [1440, 390]) {
   test(`uploads at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/uploads");
     await expect(
-      page.getByRole("heading", { name: "anomalies judged so far." }),
+      page.getByRole("heading", { name: "Your investigation starts here." }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Load demo data" }),
     ).toBeVisible();
-    await expect(page.getByText("3 Judging", { exact: true })).toBeVisible();
+    await expect(page.locator(".pipeline-canvas")).toHaveCount(0);
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
     await page.screenshot({
       path: `test-results/uploads-${width}.png`,
@@ -21,7 +49,7 @@ for (const width of [1440, 390]) {
 for (const width of [1440, 390]) {
   test(`triage at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/triage");
+    await loadPreview(page, "/triage");
     await expect(
       page.getByRole("heading", {
         name: "moments crossed the anomaly threshold.",
@@ -40,7 +68,7 @@ for (const width of [1440, 390]) {
 for (const width of [1440, 390]) {
   test(`incident at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b");
+    await loadPreview(page, "/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b");
     await page
       .getByRole("button", { name: "e1048–e1066", exact: true })
       .click();
@@ -83,7 +111,7 @@ for (const width of [1440, 390]) {
 for (const width of [1440, 390]) {
   test(`events at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/events");
+    await loadPreview(page, "/events");
     await expect(
       page.getByRole("heading", { name: "Every event, as logged." }),
     ).toBeVisible();
@@ -127,7 +155,7 @@ test("wheel scrolls the page without zooming either graph", async ({
     "/uploads",
     "/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b",
   ]) {
-    await page.goto(route);
+    await loadPreview(page, route);
     const flow = page.locator(".react-flow");
     await flow.scrollIntoViewIfNeeded();
     const viewport = flow.locator(".react-flow__viewport");
@@ -137,8 +165,22 @@ test("wheel scrolls the page without zooming either graph", async ({
     await page.mouse.wheel(0, 200);
     await expect(viewport).toHaveAttribute("style", before!);
     await flow.scrollIntoViewIfNeeded();
-    await flow.getByRole("button", { name: "zoom in" }).click();
-    await expect(viewport).not.toHaveAttribute("style", before!);
+    if (route === "/uploads") {
+      await expect(flow.locator(".react-flow__controls")).toHaveCount(0);
+      await flow
+        .locator(".react-flow__pane")
+        .dblclick({ position: { x: 30, y: 30 } });
+      await expect(viewport).toHaveAttribute("style", before!);
+      const box = await flow.boundingBox();
+      await page.mouse.move(box!.x + 30, box!.y + 30);
+      await page.mouse.down();
+      await page.mouse.move(box!.x + 130, box!.y + 80, { steps: 5 });
+      await page.mouse.up();
+      await expect(viewport).toHaveAttribute("style", before!);
+    } else {
+      await flow.getByRole("button", { name: "zoom in" }).click();
+      await expect(viewport).not.toHaveAttribute("style", before!);
+    }
   }
 });
 for (const width of [1440, 390]) {
@@ -168,7 +210,7 @@ for (const width of [1440, 390]) {
 for (const width of [1440, 390]) {
   test(`teaching dialog at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b");
+    await loadPreview(page, "/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b");
     await page
       .getByRole("button", { name: "Dismiss as false positive", exact: true })
       .click();
@@ -196,7 +238,7 @@ for (const width of [1440, 390]) {
 for (const width of [1440, 390]) {
   test(`scorecard at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/scorecard");
+    await loadPreview(page, "/scorecard");
     await expect(
       page.getByRole("heading", {
         name: "Demo data, marked against its answer key.",
@@ -221,7 +263,7 @@ test("mobile incident starts with AI summary and collapsed investigation panels"
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b");
+  await loadPreview(page, "/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b");
   await expect(page.locator(".evidence-section")).not.toHaveAttribute(
     "open",
     "",
@@ -246,7 +288,7 @@ test("mobile incident starts with AI summary and collapsed investigation panels"
 test("a fresh sample keeps its analyst decision separate from the original upload", async ({
   page,
 }) => {
-  await page.goto("/uploads");
+  await loadPreview(page, "/uploads");
   await page
     .getByRole("button", { name: "Load demo data", exact: true })
     .click();
@@ -268,9 +310,57 @@ test("a fresh sample keeps its analyst decision separate from the original uploa
   const newest = page.locator(".recent-uploads tbody tr").first();
   await expect(newest).toContainText("attack-day.log");
   await expect(newest).toContainText("1 of 3 decided");
+  await expect(page.locator(".recent-uploads tbody tr").last()).toContainText(
+    "0 of 3 decided",
+  );
+});
+
+test("home gates empty sessions, then logo returns to triage and incidents use breadcrumbs", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/uploads$/);
+  await expect(page.locator("#nav-search")).toBeDisabled();
+  await page.getByRole("link", { name: "tenfold", exact: true }).click();
+  await expect(page).toHaveURL(/\/uploads$/);
+  await page
+    .getByRole("button", { name: "Load demo data", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/triage\?upload=/);
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
   await expect(
-    page
-      .locator(".recent-uploads tbody tr")
-      .filter({ hasText: "northwind-zia-2026-10-08.log" }),
-  ).toContainText("0 of 3 decided");
+    nav.getByRole("link", { name: "Incident", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("link", { name: "Open incident", exact: true })
+    .nth(1)
+    .click();
+  await expect(
+    page.getByRole("navigation", { name: "Breadcrumb" }),
+  ).toContainText("Clockwork requests from WS-114");
+  await expect(page.getByText(/Fixture preview/)).toHaveCount(0);
+  await page.getByRole("link", { name: "tenfold", exact: true }).click();
+  await expect(page).toHaveURL(/\/triage$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "moments crossed the anomaly threshold.",
+    }),
+  ).toBeVisible();
+});
+test("global search opens and filters loaded sample evidence", async ({
+  page,
+}) => {
+  await loadPreview(page, "/triage");
+  await page.locator("#nav-search").fill("id:e1048");
+  await page.locator("#nav-search").press("Enter");
+  await expect(page).toHaveURL(/\/events\?.*q=id%3Ae1048/);
+  await expect(
+    page.getByRole("main").getByRole("textbox", { name: "Search events" }),
+  ).toHaveValue("id:e1048");
+  await expect(
+    page.getByRole("button", { name: "Open event e1048", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Open event e1049", exact: true }),
+  ).toHaveCount(0);
 });

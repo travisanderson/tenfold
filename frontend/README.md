@@ -2,19 +2,19 @@
 
 Run `npm install`, then `npm run dev` from this folder. Open http://127.0.0.1:3000/uploads.
 
-The preview implements all eight mockup views with typed fixtures. It works independently of the backend. Decisions, assignment, notes, and lessons remain in memory while navigating in the tab; refreshing resets them. Loading demo data creates a separate sample investigation. Real file analysis and Supabase sign-in are not connected yet. The file picker validates extensions and size, then explains that limitation.
+The preview implements all eight mockup views with typed fixtures. It works independently of the backend. A fresh session starts empty: the homepage leads to Triage, which redirects to Uploads until data is loaded. Click **Load demo data** to begin. Decisions, assignment, notes, and lessons remain in memory while navigating in the tab; refreshing resets them and returns the workspace to its empty state. Loading demo data creates a separate sample investigation. Real file analysis and Supabase sign-in are not connected yet. The file picker validates extensions and size, then explains that limitation.
 
 ## Screens
 
 - `/uploads`: React Flow pipeline, drop zone, recent uploads.
 - `/triage`: Chart.js risk timeline, hourly volume, incident cards.
-- `/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b`: linked citations, chart, graph, signals, evidence, notes, assignment, verdicts, teaching dialog.
+- `/incidents/{id}` (open a card from Triage): linked citations, chart, graph, signals, evidence, notes, assignment, verdicts, teaching dialog.
 - `/events`: TanStack Table and Virtual, search, time/action filters, columns, J/K navigation, raw log drawer.
 - `/states`: processing, completed, empty, malformed, partial, unavailable AI, and failure scenarios.
 - `/scorecard`: answer-key comparison and two judges.
 - `/anomalies`: disposition and judge-disagreement review.
 
-At phone width, the incident puts interpretation and measured signals first. Evidence, activity graph, request chart, timeline, and notes collapse. Wheel and pinch zoom are disabled on both React Flow views; buttons still zoom.
+At phone width, the incident puts interpretation and measured signals first. Evidence, activity graph, request chart, timeline, and notes collapse. The upload pipeline is static: no pan, zoom, or view controls. The incident activity graph keeps its controls; wheel and pinch zoom remain disabled.
 
 ## API contract and Prism
 
@@ -32,13 +32,14 @@ The authored preview contains three visible incidents and 208 evidence events. I
 
 ## Design choices
 
-- Search appears on every screen.
+- Search appears on every screen and searches loaded sample events now. It is disabled before data is loaded.
+- The logo opens the Triage homepage. Incidents use title breadcrumbs rather than a main navigation tab.
 - Times default to Eastern, with a UTC selector. Raw logs remain in UTC and retain all 21 tab-separated fields.
 - Critical/low severity use the proposed token colors with an icon and text.
 - The API wins over drawings: `.log`/`.csv`, 50 MB, five stages displayed as four nodes, and no unsupported pipeline drilldown or “See them” lesson link.
 - One incident selection drives the chart, graph, and table. No detection or score calculation lives in UI components.
 - The lesson dialog uses the scopes belonging to the incident being dismissed. Preview counts are authored API-shaped fixture responses.
-- Operational scenarios demonstrate their actions locally; the processing snapshot is not a running detection job.
+- Operational scenarios demonstrate their actions locally; the processing snapshot is not a running detection job. Progress labels and counts read upload stage fields; live progress still awaits the API connection.
 
 ## Checks
 

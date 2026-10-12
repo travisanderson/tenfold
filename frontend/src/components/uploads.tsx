@@ -19,7 +19,34 @@ export function Uploads() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const active = uploads.find((u) => u.status === "processing") ?? uploads[0];
-  const judging = active?.pipeline.find((s) => s.stage === "judging");
+  const progress = active?.pipeline.find((s) => s.stage === active.stage);
+  const stageNames = {
+    uploaded: "Waiting to start",
+    parsing: "Parsing",
+    detecting: "Detecting",
+    judging: "Judging",
+    grouping: "Writing report",
+    narrating: "Writing report",
+    done: "Complete",
+  };
+  const stageNumbers = {
+    uploaded: 0,
+    parsing: 1,
+    detecting: 2,
+    judging: 3,
+    grouping: 4,
+    narrating: 4,
+    done: 4,
+  };
+  const progressLabels = {
+    uploaded: "items queued.",
+    parsing: "lines parsed so far.",
+    detecting: "events checked so far.",
+    judging: "anomalies judged so far.",
+    grouping: "anomalies grouped so far.",
+    narrating: "incidents narrated so far.",
+    done: "incidents ready for review.",
+  };
   const dropzone = useDropzone({
     accept: { "text/plain": [".log"], "text/csv": [".csv"] },
     maxSize: 52428800,
@@ -93,18 +120,20 @@ export function Uploads() {
   return (
     <>
       <section className="hero uploads-hero">
-        <div className="hero-number">
-          {active?.status === "processing"
-            ? number(judging?.processed)
-            : number(active?.incidentCount ?? 0)}
-          {active?.status === "processing" && (
-            <span>/{number(judging?.countIn)}</span>
-          )}
-        </div>
+        {active && (
+          <div className="hero-number">
+            {active?.status === "processing"
+              ? number(progress?.processed ?? 0)
+              : number(active?.incidentCount ?? 0)}
+            {active?.status === "processing" && (
+              <span>/{number(progress?.countIn)}</span>
+            )}
+          </div>
+        )}
         <div>
           <h1>
             {active?.status === "processing"
-              ? "anomalies judged so far."
+              ? progressLabels[active.stage]
               : active
                 ? "incidents ready for review."
                 : "Your investigation starts here."}
@@ -114,9 +143,11 @@ export function Uploads() {
               <>
                 {" "}
                 {active.status === "processing"
-                  ? "Stage 3 of 4."
+                  ? `${stageNames[active.stage]} · Stage ${stageNumbers[active.stage]} of 4.`
                   : "Analysis complete."}{" "}
-                Tenfold is reading{" "}
+                {active.status === "completed"
+                  ? "Tenfold read"
+                  : "Tenfold is reading"}{" "}
                 <span className="mono">{active.filename}</span>,{" "}
                 {number(active.lineCount)} lines.{" "}
                 {active.startedAt && `Started ${time(active.startedAt, zone)}.`}

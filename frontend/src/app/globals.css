@@ -1830,3 +1830,34 @@ tr:last-child td {
     display: none;
   }
 }
+.breadcrumbs {
+  padding: var(--space-3) var(--page-gutter);
+  border-block: 1px solid var(--color-hairline-soft);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.breadcrumbs li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.breadcrumbs li + li::before {
+  content: "/";
+  margin-right: var(--space-2);
+  color: var(--color-text-secondary);
+}
+.breadcrumbs [aria-current="page"] {
+  color: var(--color-text-data);
+}
+.nav-search input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

@@ -1,5 +1,5 @@
 "use client";
-import { usePathname, useSearchParams } from "next/navigation";
+import { redirect, usePathname, useSearchParams } from "next/navigation";
 import { Shell } from "./shell";
 import { useWorkspace } from "./workspace";
 import { IncidentScreen } from "./incident";
@@ -14,12 +14,21 @@ export function PreviewShell() {
   const state = useWorkspace();
   const pathname = usePathname();
   const query = useSearchParams();
-  const activeUpload = query.get("upload") ?? state.selectedUploadId;
-  const activeIncident = state.incidents.find(
-    (i) => i.uploadId === activeUpload,
-  )?.id;
+  const incident = state.incidents.find(
+    (i) => pathname === `/incidents/${i.id}`,
+  );
+  const activeUpload =
+    query.get("upload") ?? incident?.uploadId ?? state.selectedUploadId;
+  const hasData = state.uploads.length > 0;
+  if (!hasData && !["/uploads", "/states"].includes(pathname))
+    redirect("/uploads");
   return (
-    <Shell {...state} uploadId={activeUpload} incidentId={activeIncident}>
+    <Shell
+      {...state}
+      hasData={hasData}
+      uploadId={activeUpload}
+      incidentTitle={incident?.title}
+    >
       {pathname === "/uploads" ? (
         <Uploads />
       ) : pathname === "/triage" ? (

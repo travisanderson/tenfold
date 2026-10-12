@@ -2,7 +2,6 @@
 import {
   ReactFlow,
   Background,
-  Controls,
   Handle,
   Position,
   MarkerType,
@@ -113,6 +112,13 @@ export function Pipeline({ upload }: { upload: Upload }) {
   return (
     <div className="pipeline-canvas" aria-label="Analysis pipeline">
       <ReactFlow
+        panOnDrag={false}
+        zoomOnDoubleClick={false}
+        elementsSelectable={false}
+        nodesFocusable={false}
+        edgesFocusable={false}
+        zoomActivationKeyCode={null}
+        panActivationKeyCode={null}
         zoomOnScroll={false}
         zoomOnPinch={false}
         preventScrolling={false}
@@ -128,7 +134,6 @@ export function Pipeline({ upload }: { upload: Upload }) {
         maxZoom={1.5}
       >
         <Background color="var(--color-graph-dot)" gap={20} />
-        <Controls showInteractive={false} position="bottom-right" />
       </ReactFlow>
     </div>
   );

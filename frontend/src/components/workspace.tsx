@@ -2,7 +2,7 @@
 import { createContext, useContext, useState } from "react";
 import { initialIncidents } from "@/lib/incident-fixtures";
 import type { Incident, Upload, Schema } from "@/lib/types";
-import { initialUploads, completedUpload, uploadId } from "@/lib/fixtures";
+import { completedUpload } from "@/lib/fixtures";
 
 type Workspace = {
   lessons: Schema["Lesson"][];
@@ -27,12 +27,10 @@ export function WorkspaceProvider({
   demo: boolean;
 }) {
   const [lessons, setLessons] = useState<Schema["Lesson"][]>([]);
-  const [incidents, setIncidents] = useState<Incident[]>(initialIncidents);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [zone, setZone] = useState("America/New_York");
-  const [storedUploads, setUploads] = useState<Upload[]>(
-    demo ? initialUploads : [],
-  );
-  const [selectedUploadId, setSelectedUploadId] = useState(uploadId);
+  const [storedUploads, setUploads] = useState<Upload[]>([]);
+  const [selectedUploadId, setSelectedUploadId] = useState("");
   const uploads = storedUploads.map((upload) => {
     const relevant = incidents.filter((i) => i.uploadId === upload.id);
     if (!relevant.length) return upload;

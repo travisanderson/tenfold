@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useWorkspace } from "./workspace";
 import { UploadState } from "./upload-state";
 import { RiskTimeline, VolumeStrip } from "./charts";
@@ -21,13 +21,7 @@ export function Triage() {
   const upload = state.uploads.find(
     (u) => u.id === (query.get("upload") ?? state.selectedUploadId),
   );
-  if (!upload)
-    return (
-      <div className="panel">
-        <h1>Choose an upload to begin.</h1>
-        <Link href="/uploads">Open uploads</Link>
-      </div>
-    );
+  if (!upload) redirect("/uploads");
   const incidents = state.incidents.filter((i) => i.uploadId === upload.id);
   if (upload.status !== "completed")
     return (
