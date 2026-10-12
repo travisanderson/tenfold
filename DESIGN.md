@@ -34,7 +34,7 @@ Below are my stack decisions, for this challenge.
 I am going to go with Next.js for the framework, because I’m most familiar with it, I have server and client layers available, and an easy deployment pipeline up to Vercel, to save time.
 
 **Basic Auth**
-I am going to use Auth provided by Supabase. It’s quick to implement, robust, I’ve used it in production, and it’s directly tied to the Postgres db with RLS baked in for free. High security and convenience for this challenge.
+I am going to use Auth provided by Supabase. It’s quick to implement, robust, I’ve used it in production, and it’s directly tied to the Postgres db with RLS baked in. RLS will be on with no policies, which blocks direct client access; tenancy will be enforced in the Go API’s queries.
 
 **File Uploads (logs)**
 I will use a nice drag and drop library for the client side, and save the uploaded files using Supabase storage, to avoid setting up an S3 or GCS as a one-off. Same result. Less time spent.
