@@ -10,3 +10,14 @@ for (const width of [1440, 390]) {
     await page.screenshot({ path: `test-results/uploads-${width}.png`, fullPage: true });
   });
 }
+
+for (const width of [1440, 390]) {
+ test(`triage at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 1000 });
+  await page.goto('/triage');
+  await expect(page.getByRole('heading', { name: 'moments crossed the anomaly threshold.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open incident', exact: true })).toHaveCount(3);
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', width);
+  await page.screenshot({ path: `test-results/triage-${width}.png`, fullPage: true });
+ });
+}
