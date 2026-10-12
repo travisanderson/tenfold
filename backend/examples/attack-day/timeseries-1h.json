@@ -1,0 +1,173 @@
+{
+  "bucketSeconds": 3600,
+  "points": [
+    {
+      "anomalous": 97,
+      "blocked": 1,
+      "peakRiskScore": 69,
+      "total": 190,
+      "ts": "2026-10-08T04:00:00Z"
+    },
+    {
+      "anomalous": 246,
+      "blocked": 0,
+      "peakRiskScore": 69,
+      "total": 347,
+      "ts": "2026-10-08T05:00:00Z"
+    },
+    {
+      "anomalous": 218,
+      "blocked": 0,
+      "peakRiskScore": 91,
+      "total": 317,
+      "ts": "2026-10-08T06:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 0,
+      "peakRiskScore": 20,
+      "total": 179,
+      "ts": "2026-10-08T07:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 0,
+      "peakRiskScore": 20,
+      "total": 203,
+      "ts": "2026-10-08T08:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 1,
+      "peakRiskScore": 20,
+      "total": 223,
+      "ts": "2026-10-08T09:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 4,
+      "peakRiskScore": 20,
+      "total": 419,
+      "ts": "2026-10-08T10:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 45,
+      "peakRiskScore": 20,
+      "total": 1496,
+      "ts": "2026-10-08T11:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 104,
+      "peakRiskScore": 20,
+      "total": 3414,
+      "ts": "2026-10-08T12:00:00Z"
+    },
+    {
+      "anomalous": 144,
+      "blocked": 122,
+      "peakRiskScore": 69,
+      "total": 4317,
+      "ts": "2026-10-08T13:00:00Z"
+    },
+    {
+      "anomalous": 156,
+      "blocked": 109,
+      "peakRiskScore": 69,
+      "total": 4226,
+      "ts": "2026-10-08T14:00:00Z"
+    },
+    {
+      "anomalous": 157,
+      "blocked": 120,
+      "peakRiskScore": 69,
+      "total": 4106,
+      "ts": "2026-10-08T15:00:00Z"
+    },
+    {
+      "anomalous": 108,
+      "blocked": 97,
+      "peakRiskScore": 69,
+      "total": 3160,
+      "ts": "2026-10-08T16:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 101,
+      "peakRiskScore": 20,
+      "total": 3664,
+      "ts": "2026-10-08T17:00:00Z"
+    },
+    {
+      "anomalous": 146,
+      "blocked": 144,
+      "peakRiskScore": 54,
+      "total": 4169,
+      "ts": "2026-10-08T18:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 133,
+      "peakRiskScore": 20,
+      "total": 4065,
+      "ts": "2026-10-08T19:00:00Z"
+    },
+    {
+      "anomalous": 176,
+      "blocked": 199,
+      "peakRiskScore": 49,
+      "total": 4227,
+      "ts": "2026-10-08T20:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 101,
+      "peakRiskScore": 20,
+      "total": 3848,
+      "ts": "2026-10-08T21:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 60,
+      "peakRiskScore": 20,
+      "total": 2385,
+      "ts": "2026-10-08T22:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 16,
+      "peakRiskScore": 20,
+      "total": 852,
+      "ts": "2026-10-08T23:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 13,
+      "peakRiskScore": 20,
+      "total": 603,
+      "ts": "2026-10-09T00:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 18,
+      "peakRiskScore": 20,
+      "total": 610,
+      "ts": "2026-10-09T01:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 15,
+      "peakRiskScore": 20,
+      "total": 554,
+      "ts": "2026-10-09T02:00:00Z"
+    },
+    {
+      "anomalous": 96,
+      "blocked": 4,
+      "peakRiskScore": 20,
+      "total": 380,
+      "ts": "2026-10-09T03:00:00Z"
+    }
+  ]
+}

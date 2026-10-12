@@ -1,0 +1,1950 @@
+{
+  "aiVerdict": "likely_malicious",
+  "analystVerdict": {
+    "status": "open"
+  },
+  "anomalyCount": 4,
+  "chart": {
+    "baselineBytesOut": 657,
+    "baselineLabel": "median: under 0.1 MB",
+    "window": {
+      "end": "2026-10-08T06:51:12Z",
+      "start": "2026-10-08T06:03:52Z"
+    }
+  },
+  "eventCount": 23,
+  "evidence": [
+    {
+      "flags": [
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        }
+      ],
+      "id": "e621",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 621,
+      "network": {
+        "bytesIn": 14541,
+        "bytesOut": 1126,
+        "method": "GET",
+        "status": 200,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:13:52Z\trecordid=621\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=198.51.100.10\thost=login.microsoftonline.com\turl=https://login.microsoftonline.com/common/oauth2/v2.0/authorize\turlcat=Office 365\taction=Allowed\treason=Allowed\treqmethod=GET\trespcode=200\treqsize=1126\trespsize=14541\tua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0\tappname=Microsoft Login\tappclass=Business\tdevicehostname=LT-022\tthreatname=None\triskscore=8",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 8
+      },
+      "target": {
+        "category": "Office 365",
+        "host": "login.microsoftonline.com",
+        "ip": "198.51.100.10",
+        "url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+      },
+      "ts": "2026-10-08T06:13:52Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        }
+      ],
+      "id": "e625",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 625,
+      "network": {
+        "bytesIn": 6963,
+        "bytesOut": 2150,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:14:07Z\trecordid=625\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=198.51.100.10\thost=login.microsoftonline.com\turl=https://login.microsoftonline.com/common/oauth2/v2.0/token\turlcat=Office 365\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2150\trespsize=6963\tua=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0\tappname=Microsoft Login\tappclass=Business\tdevicehostname=LT-022\tthreatname=None\triskscore=12",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 12
+      },
+      "target": {
+        "category": "Office 365",
+        "host": "login.microsoftonline.com",
+        "ip": "198.51.100.10",
+        "url": "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+      },
+      "ts": "2026-10-08T06:14:07Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        }
+      ],
+      "id": "e646",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 646,
+      "network": {
+        "bytesIn": 1228,
+        "bytesOut": 410,
+        "method": "GET",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:17:22Z\trecordid=646\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=GET\trespcode=200\treqsize=410\trespsize=1228\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=61",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 61
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/"
+      },
+      "ts": "2026-10-08T06:17:22Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e649",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 649,
+      "network": {
+        "bytesIn": 418,
+        "bytesOut": 2125038,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:17:41Z\trecordid=649\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2125038\trespsize=418\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:17:41Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e655",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 655,
+      "network": {
+        "bytesIn": 400,
+        "bytesOut": 2511786,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:18:56Z\trecordid=655\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2511786\trespsize=400\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:18:56Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e662",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 662,
+      "network": {
+        "bytesIn": 417,
+        "bytesOut": 2278237,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:20:18Z\trecordid=662\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2278237\trespsize=417\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:20:18Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e668",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 668,
+      "network": {
+        "bytesIn": 400,
+        "bytesOut": 2209642,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:21:37Z\trecordid=668\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2209642\trespsize=400\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:21:37Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e678",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 678,
+      "network": {
+        "bytesIn": 424,
+        "bytesOut": 2168775,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:22:46Z\trecordid=678\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2168775\trespsize=424\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:22:46Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e686",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 686,
+      "network": {
+        "bytesIn": 394,
+        "bytesOut": 2372583,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:24:03Z\trecordid=686\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2372583\trespsize=394\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:24:03Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e696",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 696,
+      "network": {
+        "bytesIn": 394,
+        "bytesOut": 2394413,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:25:17Z\trecordid=696\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2394413\trespsize=394\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:25:17Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e705",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 705,
+      "network": {
+        "bytesIn": 394,
+        "bytesOut": 2374459,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:26:36Z\trecordid=705\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2374459\trespsize=394\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:26:36Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e716",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 716,
+      "network": {
+        "bytesIn": 399,
+        "bytesOut": 2119813,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:27:53Z\trecordid=716\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2119813\trespsize=399\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:27:53Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e727",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 727,
+      "network": {
+        "bytesIn": 421,
+        "bytesOut": 2131133,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:29:16Z\trecordid=727\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2131133\trespsize=421\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:29:16Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e733",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 733,
+      "network": {
+        "bytesIn": 414,
+        "bytesOut": 2381196,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:30:35Z\trecordid=733\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2381196\trespsize=414\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:30:35Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e740",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 740,
+      "network": {
+        "bytesIn": 396,
+        "bytesOut": 2253510,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:31:49Z\trecordid=740\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2253510\trespsize=396\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:31:49Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e756",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 756,
+      "network": {
+        "bytesIn": 437,
+        "bytesOut": 2174191,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:33:11Z\trecordid=756\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2174191\trespsize=437\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:33:11Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e763",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 763,
+      "network": {
+        "bytesIn": 373,
+        "bytesOut": 2120083,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:34:19Z\trecordid=763\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2120083\trespsize=373\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:34:19Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e768",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 768,
+      "network": {
+        "bytesIn": 434,
+        "bytesOut": 2370145,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:35:35Z\trecordid=768\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2370145\trespsize=434\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:35:35Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e775",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 775,
+      "network": {
+        "bytesIn": 413,
+        "bytesOut": 2440108,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:36:58Z\trecordid=775\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2440108\trespsize=413\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:36:58Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e784",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 784,
+      "network": {
+        "bytesIn": 402,
+        "bytesOut": 2148935,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:38:13Z\trecordid=784\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2148935\trespsize=402\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:38:13Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e792",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 792,
+      "network": {
+        "bytesIn": 362,
+        "bytesOut": 2188642,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:39:28Z\trecordid=792\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2188642\trespsize=362\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:39:28Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e798",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 798,
+      "network": {
+        "bytesIn": 441,
+        "bytesOut": 2193964,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:40:51Z\trecordid=798\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2193964\trespsize=441\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:40:51Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        }
+      ],
+      "id": "e801",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 801,
+      "network": {
+        "bytesIn": 640,
+        "bytesOut": 315,
+        "method": "GET",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:41:12Z\trecordid=801\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/status\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=GET\trespcode=200\treqsize=315\trespsize=640\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=61",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 61
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/status"
+      },
+      "ts": "2026-10-08T06:41:12Z"
+    }
+  ],
+  "evidenceEventIds": [
+    "e621",
+    "e625",
+    "e646",
+    "e649",
+    "e655",
+    "e662",
+    "e668",
+    "e678",
+    "e686",
+    "e696",
+    "e705",
+    "e716",
+    "e727",
+    "e733",
+    "e740",
+    "e756",
+    "e763",
+    "e768",
+    "e775",
+    "e784",
+    "e792",
+    "e798",
+    "e801"
+  ],
+  "graph": {
+    "edges": [
+      {
+        "eventCount": 23,
+        "eventIds": [
+          "e621",
+          "e625",
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "flagged": true,
+        "id": "user:dana.k>ip:10.20.99.47",
+        "label": "06:13 UTC",
+        "source": "user:dana.k",
+        "target": "ip:10.20.99.47"
+      },
+      {
+        "bytes": 3276,
+        "eventCount": 2,
+        "eventIds": [
+          "e621",
+          "e625"
+        ],
+        "flagged": false,
+        "id": "ip:10.20.99.47>domain:login.microsoftonline.com",
+        "label": "06:13 UTC",
+        "source": "ip:10.20.99.47",
+        "target": "domain:login.microsoftonline.com"
+      },
+      {
+        "bytes": 42957378,
+        "eventCount": 21,
+        "eventIds": [
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "flagged": true,
+        "id": "ip:10.20.99.47>domain:files-sync-cdn.net",
+        "label": "06:17 UTC",
+        "source": "ip:10.20.99.47",
+        "target": "domain:files-sync-cdn.net"
+      },
+      {
+        "bytes": 3276,
+        "eventCount": 2,
+        "eventIds": [
+          "e621",
+          "e625"
+        ],
+        "flagged": false,
+        "id": "domain:login.microsoftonline.com>data:bytes_out",
+        "label": "06:13 UTC",
+        "source": "domain:login.microsoftonline.com",
+        "target": "data:bytes_out"
+      },
+      {
+        "bytes": 42957378,
+        "eventCount": 21,
+        "eventIds": [
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "flagged": true,
+        "id": "domain:files-sync-cdn.net>data:bytes_out",
+        "label": "06:17 UTC",
+        "source": "domain:files-sync-cdn.net",
+        "target": "data:bytes_out"
+      },
+      {
+        "eventCount": 1,
+        "eventIds": [
+          "e656"
+        ],
+        "flagged": false,
+        "id": "user:dana.k>ip:10.20.2.11",
+        "label": "06:18 UTC",
+        "source": "user:dana.k",
+        "target": "ip:10.20.2.11"
+      },
+      {
+        "bytes": 2261,
+        "eventCount": 3,
+        "eventIds": [
+          "e656",
+          "e660",
+          "e692"
+        ],
+        "flagged": false,
+        "id": "ip:10.20.2.11>domain:wss-primary.slack.com",
+        "label": "06:18 UTC",
+        "source": "ip:10.20.2.11",
+        "target": "domain:wss-primary.slack.com"
+      },
+      {
+        "bytes": 632,
+        "eventCount": 2,
+        "eventIds": [
+          "e694",
+          "e796"
+        ],
+        "flagged": false,
+        "id": "ip:10.20.2.11>domain:update.vendor-agent.example",
+        "label": "06:25 UTC",
+        "source": "ip:10.20.2.11",
+        "target": "domain:update.vendor-agent.example"
+      }
+    ],
+    "nodes": [
+      {
+        "eventIds": [
+          "e621",
+          "e625",
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "flagged": false,
+        "id": "user:dana.k",
+        "label": "dana.k",
+        "neighbour": false,
+        "type": "user",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "eventIds": [
+          "e621",
+          "e625",
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "flagged": true,
+        "id": "ip:10.20.99.47",
+        "label": "10.20.99.47",
+        "neighbour": false,
+        "sublabel": "LT-022",
+        "type": "ip",
+        "x": 260,
+        "y": 0
+      },
+      {
+        "eventIds": [
+          "e621",
+          "e625"
+        ],
+        "flagged": false,
+        "id": "domain:login.microsoftonline.com",
+        "label": "login.microsoftonline.com",
+        "neighbour": false,
+        "sublabel": "Office 365 \u00b7 1,131 requests in this file",
+        "type": "domain",
+        "x": 520,
+        "y": 0
+      },
+      {
+        "eventIds": [
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "flagged": true,
+        "id": "domain:files-sync-cdn.net",
+        "label": "files-sync-cdn.net",
+        "neighbour": false,
+        "sublabel": "Miscellaneous or Unknown \u00b7 21 requests in this file",
+        "type": "domain",
+        "x": 520,
+        "y": 90
+      },
+      {
+        "eventIds": [
+          "e621",
+          "e625",
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "flagged": true,
+        "id": "data:bytes_out",
+        "label": "41.0 MB out",
+        "neighbour": false,
+        "sublabel": "total sent",
+        "type": "data",
+        "x": 780,
+        "y": 0
+      },
+      {
+        "eventIds": [],
+        "flagged": false,
+        "id": "ip:10.20.2.11",
+        "label": "10.20.2.11",
+        "neighbour": true,
+        "sublabel": "LT-022",
+        "type": "ip",
+        "x": 260,
+        "y": 90
+      },
+      {
+        "eventIds": [
+          "e656",
+          "e660",
+          "e692"
+        ],
+        "flagged": false,
+        "id": "domain:wss-primary.slack.com",
+        "label": "wss-primary.slack.com",
+        "neighbour": true,
+        "sublabel": "Professional Services \u00b7 658 requests in this file",
+        "type": "domain",
+        "x": 520,
+        "y": 180
+      },
+      {
+        "eventIds": [
+          "e694",
+          "e796"
+        ],
+        "flagged": false,
+        "id": "domain:update.vendor-agent.example",
+        "label": "update.vendor-agent.example",
+        "neighbour": true,
+        "sublabel": "Information Technology \u00b7 2,304 requests in this file",
+        "type": "domain",
+        "x": 520,
+        "y": 270
+      }
+    ]
+  },
+  "id": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+  "indicators": [
+    {
+      "eventCount": 2075,
+      "type": "user",
+      "value": "dana.k"
+    },
+    {
+      "eventCount": 2075,
+      "type": "host",
+      "value": "LT-022"
+    },
+    {
+      "eventCount": 23,
+      "type": "ip",
+      "value": "10.20.99.47"
+    },
+    {
+      "eventCount": 1131,
+      "type": "domain",
+      "value": "login.microsoftonline.com"
+    },
+    {
+      "eventCount": 21,
+      "type": "domain",
+      "value": "files-sync-cdn.net"
+    }
+  ],
+  "lessonSuggestions": [
+    {
+      "label": "requests to files-sync-cdn.net",
+      "scope": {
+        "type": "domain",
+        "value": "files-sync-cdn.net"
+      }
+    },
+    {
+      "label": "everything from dana.k",
+      "scope": {
+        "type": "user",
+        "value": "dana.k"
+      }
+    }
+  ],
+  "markerDetail": "190\u00d7 median",
+  "markerLabel": "41.0 MB out",
+  "mitre": [
+    {
+      "id": "T1078",
+      "name": "Valid Accounts",
+      "tactic": "Initial Access"
+    },
+    {
+      "id": "T1567",
+      "name": "Exfiltration Over Web Service",
+      "tactic": "Exfiltration"
+    }
+  ],
+  "narrative": {
+    "generatedAt": "2026-10-12T01:53:56.720066292Z",
+    "nextSteps": [
+      "Ask dana.k whether the transfer to files-sync-cdn.net was expected.",
+      "Check who else has reached files-sync-cdn.net in earlier uploads.",
+      "Check whether dana.k was working from the unusual address."
+    ],
+    "provider": "mock",
+    "sentences": [
+      {
+        "citations": [
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "text": "dana.k sent 41.0 MB to files-sync-cdn.net in 24 minutes, 190\u00d7 this user's median hour."
+      },
+      {
+        "citations": [
+          "e621",
+          "e625",
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "text": "23 of dana.k's 2,075 requests came from 10.20.99.47; the rest came from 10.20.2.11."
+      },
+      {
+        "citations": [
+          "e646",
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798",
+          "e801"
+        ],
+        "text": "dana.k is the only one of 25 users who reached files-sync-cdn.net (21 requests)."
+      },
+      {
+        "citations": [
+          "e649",
+          "e655",
+          "e662",
+          "e668",
+          "e678",
+          "e686",
+          "e696",
+          "e705",
+          "e716",
+          "e727",
+          "e733",
+          "e740",
+          "e756",
+          "e763",
+          "e768",
+          "e775",
+          "e784",
+          "e792",
+          "e798"
+        ],
+        "text": "dana.k sent 41.0 MB between 06:17 and 06:40 UTC, when the company is quiet."
+      }
+    ],
+    "status": "generated"
+  },
+  "notes": [],
+  "principal": {
+    "host": "LT-022",
+    "user": "dana.k"
+  },
+  "riskScore": 91,
+  "severity": "high",
+  "signals": [
+    {
+      "baseline": 225942,
+      "baselineDetail": "per hour, this user's median in this file",
+      "baselineSource": "in_file",
+      "baselineText": "221 KB",
+      "description": "Outbound bytes 190\u00d7 this user's median hour in this file",
+      "eventIds": [
+        "e646",
+        "e649",
+        "e655",
+        "e662",
+        "e668",
+        "e678",
+        "e686",
+        "e696",
+        "e705",
+        "e716",
+        "e727",
+        "e733",
+        "e740",
+        "e756",
+        "e763",
+        "e768",
+        "e775",
+        "e784",
+        "e792",
+        "e798",
+        "e801"
+      ],
+      "layer": "baselines",
+      "name": "bytes_out_vs_baseline",
+      "observed": "41.0 MB",
+      "observedDetail": "in 24 minutes",
+      "unit": "bytes",
+      "value": 42957378,
+      "weight": 34
+    },
+    {
+      "baseline": 2052,
+      "baselineDetail": "this user's usual address, 2,052 requests in this file",
+      "baselineSource": "in_file",
+      "baselineText": "10.20.2.11",
+      "description": "Requests for dana.k came from 10.20.99.47, an address this user rarely uses",
+      "eventIds": [
+        "e621",
+        "e625",
+        "e646",
+        "e649",
+        "e655",
+        "e662",
+        "e668",
+        "e678",
+        "e686",
+        "e696",
+        "e705",
+        "e716",
+        "e727",
+        "e733",
+        "e740",
+        "e756",
+        "e763",
+        "e768",
+        "e775",
+        "e784",
+        "e792",
+        "e798",
+        "e801"
+      ],
+      "layer": "baselines",
+      "name": "new_source_ip",
+      "observed": "10.20.99.47",
+      "observedDetail": "23 of 2,075 requests",
+      "unit": "requests",
+      "value": 23,
+      "weight": 22
+    },
+    {
+      "baseline": 25,
+      "baselineDetail": "in this file",
+      "baselineSource": "in_file",
+      "baselineText": "25 users",
+      "description": "Only dana.k reached files-sync-cdn.net in this file",
+      "eventIds": [
+        "e646",
+        "e649",
+        "e655",
+        "e662",
+        "e668",
+        "e678",
+        "e686",
+        "e696",
+        "e705",
+        "e716",
+        "e727",
+        "e733",
+        "e740",
+        "e756",
+        "e763",
+        "e768",
+        "e775",
+        "e784",
+        "e792",
+        "e798",
+        "e801"
+      ],
+      "layer": "baselines",
+      "name": "rare_destination",
+      "observed": "1 user",
+      "observedDetail": "21 requests",
+      "unit": "users",
+      "value": 1,
+      "weight": 19
+    },
+    {
+      "baseline": 5242880,
+      "baselineDetail": "quiet hours: the typical user is under 10% of their peak",
+      "baselineSource": "in_file",
+      "baselineText": "03:00\u201311:00 UTC",
+      "description": "41.0 MB sent during the company's quiet hours",
+      "eventIds": [
+        "e649",
+        "e655",
+        "e662",
+        "e668",
+        "e678",
+        "e686",
+        "e696",
+        "e705",
+        "e716",
+        "e727",
+        "e733",
+        "e740",
+        "e756",
+        "e763",
+        "e768",
+        "e775",
+        "e784",
+        "e792",
+        "e798"
+      ],
+      "layer": "baselines",
+      "name": "off_hours_transfer",
+      "observed": "41.0 MB",
+      "observedDetail": "06:17\u201306:40 UTC",
+      "unit": "bytes",
+      "value": 42956653,
+      "weight": 16
+    }
+  ],
+  "summary": "dana.k sent 41.0 MB to files-sync-cdn.net in 24 minutes, 190\u00d7 this user's median hour. 23 of dana.k's 2,075 requests came from 10.20.99.47; the rest came from 10.20.2.11.",
+  "timeRange": {
+    "end": "2026-10-08T06:41:12Z",
+    "start": "2026-10-08T06:13:52Z"
+  },
+  "timeline": [
+    {
+      "eventId": "e621",
+      "kind": "new_source",
+      "label": "First request from 10.20.99.47",
+      "ts": "2026-10-08T06:13:52Z"
+    },
+    {
+      "eventId": "e646",
+      "kind": "first_seen",
+      "label": "First request to files-sync-cdn.net",
+      "ts": "2026-10-08T06:17:22Z"
+    },
+    {
+      "eventId": "e646",
+      "kind": "transfer",
+      "label": "Transfer to files-sync-cdn.net begins (410 B)",
+      "ts": "2026-10-08T06:17:22Z"
+    },
+    {
+      "eventId": "e649",
+      "kind": "off_hours",
+      "label": "Large transfers begin in quiet hours",
+      "ts": "2026-10-08T06:17:41Z"
+    },
+    {
+      "eventId": "e801",
+      "kind": "transfer",
+      "label": "Transfer ends; 41.0 MB sent in all",
+      "ts": "2026-10-08T06:41:12Z"
+    }
+  ],
+  "title": "Large outbound transfer to files-sync-cdn.net",
+  "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+}

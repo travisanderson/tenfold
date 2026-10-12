@@ -1,0 +1,125 @@
+[
+  {
+    "event": "progress",
+    "data": {
+      "at": "2026-10-12T01:53:48.090286179Z",
+      "counts": {
+        "anomalies": 0,
+        "events": 0,
+        "incidents": 0,
+        "lines": 0
+      },
+      "message": "Queued",
+      "pipeline": [
+        {
+          "stage": "parsing",
+          "state": "running"
+        },
+        {
+          "stage": "detecting",
+          "state": "pending"
+        },
+        {
+          "stage": "judging",
+          "state": "pending"
+        },
+        {
+          "stage": "grouping",
+          "state": "pending"
+        },
+        {
+          "stage": "narrating",
+          "state": "pending"
+        }
+      ],
+      "progress": 0,
+      "stage": "parsing",
+      "status": "processing",
+      "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+    }
+  },
+  {
+    "event": "progress",
+    "data": {
+      "at": "2026-10-12T01:53:49.366147598Z",
+      "counts": {
+        "anomalies": 0,
+        "events": 5000,
+        "incidents": 0,
+        "lines": 5005
+      },
+      "message": "Reading lines: 5,005 so far",
+      "pipeline": [
+        {
+          "elapsedMs": 1443,
+          "processed": 5005,
+          "stage": "parsing",
+          "state": "running"
+        },
+        {
+          "stage": "detecting",
+          "state": "pending"
+        },
+        {
+          "stage": "judging",
+          "state": "pending"
+        },
+        {
+          "stage": "grouping",
+          "state": "pending"
+        },
+        {
+          "stage": "narrating",
+          "state": "pending"
+        }
+      ],
+      "progress": 4,
+      "stage": "parsing",
+      "status": "processing",
+      "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+    }
+  },
+  {
+    "event": "progress",
+    "data": {
+      "at": "2026-10-12T01:53:55.076950037Z",
+      "counts": {
+        "anomalies": 0,
+        "events": 47954,
+        "incidents": 0,
+        "lines": 48002
+      },
+      "message": "48 of 48,002 lines could not be read. Analyze the good lines, or cancel this upload.",
+      "pipeline": [
+        {
+          "countIn": 48002,
+          "countOut": 47954,
+          "elapsedMs": 7150,
+          "processed": 48002,
+          "stage": "parsing",
+          "state": "stopped"
+        },
+        {
+          "stage": "detecting",
+          "state": "pending"
+        },
+        {
+          "stage": "judging",
+          "state": "pending"
+        },
+        {
+          "stage": "grouping",
+          "state": "pending"
+        },
+        {
+          "stage": "narrating",
+          "state": "pending"
+        }
+      ],
+      "progress": 45,
+      "stage": "parsing",
+      "status": "partial",
+      "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+    }
+  }
+]

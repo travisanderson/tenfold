@@ -1,0 +1,160 @@
+{
+  "items": [
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        }
+      ],
+      "id": "e646",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 646,
+      "network": {
+        "bytesIn": 1228,
+        "bytesOut": 410,
+        "method": "GET",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:17:22Z\trecordid=646\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=GET\trespcode=200\treqsize=410\trespsize=1228\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=61",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 61
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/"
+      },
+      "ts": "2026-10-08T06:17:22Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e649",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 649,
+      "network": {
+        "bytesIn": 418,
+        "bytesOut": 2125038,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:17:41Z\trecordid=649\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2125038\trespsize=418\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:17:41Z"
+    },
+    {
+      "flags": [
+        {
+          "anomalyId": "46b72ed8-821c-4e7a-ba86-8545c4a3c0aa",
+          "disposition": "in_incident",
+          "label": "bytes out 190\u00d7 baseline"
+        },
+        {
+          "anomalyId": "5655fe1b-a9f0-46a5-bb56-aa66815e257b",
+          "disposition": "in_incident",
+          "label": "unusual source address"
+        },
+        {
+          "anomalyId": "1ab8decf-adec-4206-9239-7d4f9a102528",
+          "disposition": "in_incident",
+          "label": "host only this user reached"
+        },
+        {
+          "anomalyId": "4ef82680-e9f6-4a2d-8d08-05cd834b5a5d",
+          "disposition": "in_incident",
+          "label": "large transfer in quiet hours"
+        }
+      ],
+      "id": "e655",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "lineNo": 655,
+      "network": {
+        "bytesIn": 400,
+        "bytesOut": 2511786,
+        "method": "POST",
+        "status": 200,
+        "userAgent": "curl/8.4.0"
+      },
+      "principal": {
+        "dept": "Finance",
+        "device": "LT-022",
+        "srcIp": "10.20.99.47",
+        "user": "dana.k"
+      },
+      "raw": "time=2026-10-08T06:18:56Z\trecordid=655\tlogin=dana.k@northwindlabs.example\tdept=Finance\tcip=10.20.99.47\tsip=192.0.2.36\thost=files-sync-cdn.net\turl=https://files-sync-cdn.net/api/v2/put\turlcat=Miscellaneous or Unknown\taction=Allowed\treason=Allowed\treqmethod=POST\trespcode=200\treqsize=2511786\trespsize=400\tua=curl/8.4.0\tappname=General Browsing\tappclass=General Browsing\tdevicehostname=LT-022\tthreatname=None\triskscore=78",
+      "securityResult": {
+        "action": "allowed",
+        "reason": "Allowed",
+        "riskScore": 78
+      },
+      "target": {
+        "category": "Miscellaneous or Unknown",
+        "host": "files-sync-cdn.net",
+        "ip": "192.0.2.36",
+        "url": "https://files-sync-cdn.net/api/v2/put"
+      },
+      "ts": "2026-10-08T06:18:56Z"
+    }
+  ],
+  "nextCursor": "eyJUUyI6IjIwMjYtMTAtMDhUMDY6MTg6NTZaIiwiTGluZU5vIjo2NTV9",
+  "total": 21
+}

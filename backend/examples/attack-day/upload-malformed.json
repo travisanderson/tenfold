@@ -1,0 +1,59 @@
+{
+  "completedAt": "2026-10-12T01:53:55.073205Z",
+  "createdAt": "2026-10-12T01:53:47.889204Z",
+  "eventCount": 47954,
+  "filename": "attack-day.log",
+  "firstParseError": {
+    "lineNo": 2382,
+    "reason": "expected 21 fields, found 16",
+    "sample": "time=2026-10-08T11:30:07Z\trecordid=2382\tlogin=marcus.l@northwindlabs.example\tdept=Engineering\tcip=10.20.1.11\tsip=198.51."
+  },
+  "hostCount": 25,
+  "id": "4a8e09be-aaf9-4482-ad7a-b9baece2406a",
+  "lineCount": 48002,
+  "parseErrorCount": 48,
+  "pipeline": [
+    {
+      "countIn": 48002,
+      "countOut": 47954,
+      "elapsedMs": 7150,
+      "processed": 48002,
+      "stage": "parsing",
+      "state": "stopped"
+    },
+    {
+      "stage": "detecting",
+      "state": "pending"
+    },
+    {
+      "stage": "judging",
+      "state": "pending"
+    },
+    {
+      "stage": "grouping",
+      "state": "pending"
+    },
+    {
+      "stage": "narrating",
+      "state": "pending"
+    }
+  ],
+  "progress": 45,
+  "riskThreshold": 30,
+  "sampleName": "attack-day",
+  "sizeBytes": 24195893,
+  "source": "sample",
+  "stage": "parsing",
+  "startedAt": "2026-10-12T01:53:47.908521Z",
+  "status": "partial",
+  "stop": {
+    "message": "48 of 48,002 lines could not be read. Analyze the good lines, or cancel this upload.",
+    "reason": "parse_errors",
+    "stage": "parsing"
+  },
+  "timeRange": {
+    "end": "2026-10-09T03:59:56Z",
+    "start": "2026-10-08T04:00:03Z"
+  },
+  "userCount": 25
+}

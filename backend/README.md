@@ -2,6 +2,8 @@
 
 The Go backend. It implements every operation in `../api/openapi.yaml`.
 
+Connecting the frontend? Read `FRONTEND.md`.
+
 ## Run it
 
 ```sh

@@ -1,0 +1,26 @@
+[
+  {
+    "description": "One day of proxy traffic with four planted attacks and three benign decoys.",
+    "hasAnswerKey": true,
+    "lineCount": 48002,
+    "name": "attack-day",
+    "sizeBytes": 24195893,
+    "title": "Northwind Labs, attack day"
+  },
+  {
+    "description": "One day of normal traffic and three benign decoys. No attacks.",
+    "hasAnswerKey": true,
+    "lineCount": 30000,
+    "name": "clean-day",
+    "sizeBytes": 14831617,
+    "title": "Northwind Labs, clean day"
+  },
+  {
+    "description": "A larger company on the same day, with the same attacks and decoys.",
+    "hasAnswerKey": true,
+    "lineCount": 100002,
+    "name": "large-100k",
+    "sizeBytes": 49779817,
+    "title": "Northwind Labs, 100,000 lines"
+  }
+]

@@ -1,0 +1,78 @@
+{
+  "anomalyCount": 41,
+  "completedAt": "2026-10-12T01:53:56.75734Z",
+  "createdAt": "2026-10-12T01:53:47.889204Z",
+  "eventCount": 47954,
+  "filename": "attack-day.log",
+  "firstParseError": {
+    "lineNo": 2382,
+    "reason": "expected 21 fields, found 16",
+    "sample": "time=2026-10-08T11:30:07Z\trecordid=2382\tlogin=marcus.l@northwindlabs.example\tdept=Engineering\tcip=10.20.1.11\tsip=198.51."
+  },
+  "hostCount": 25,
+  "id": "4a8e09be-aaf9-4482-ad7a-b9baece2406a",
+  "incidentCount": 5,
+  "lineCount": 48002,
+  "parseErrorCount": 48,
+  "pipeline": [
+    {
+      "countIn": 48002,
+      "countOut": 47954,
+      "elapsedMs": 7150,
+      "processed": 48002,
+      "stage": "parsing",
+      "state": "done"
+    },
+    {
+      "countIn": 47954,
+      "countOut": 41,
+      "elapsedMs": 622,
+      "processed": 47954,
+      "stage": "detecting",
+      "state": "done"
+    },
+    {
+      "countIn": 17,
+      "countOut": 16,
+      "elapsedMs": 37,
+      "processed": 17,
+      "stage": "judging",
+      "state": "done"
+    },
+    {
+      "countIn": 16,
+      "countOut": 5,
+      "elapsedMs": 407,
+      "processed": 16,
+      "stage": "grouping",
+      "state": "done"
+    },
+    {
+      "countIn": 5,
+      "countOut": 5,
+      "elapsedMs": 53,
+      "processed": 5,
+      "stage": "narrating",
+      "state": "done"
+    }
+  ],
+  "progress": 100,
+  "riskThreshold": 30,
+  "sampleName": "attack-day",
+  "sizeBytes": 24195893,
+  "source": "sample",
+  "stage": "done",
+  "startedAt": "2026-10-12T01:53:55.607805Z",
+  "status": "completed",
+  "timeRange": {
+    "end": "2026-10-09T03:59:56Z",
+    "start": "2026-10-08T04:00:03Z"
+  },
+  "userCount": 25,
+  "verdictCounts": {
+    "confirmed": 0,
+    "dismissed": 0,
+    "escalated": 0,
+    "open": 5
+  }
+}

@@ -1,0 +1,162 @@
+[
+  {
+    "aiVerdict": "likely_malicious",
+    "analystVerdict": {
+      "status": "open"
+    },
+    "anomalyCount": 4,
+    "eventCount": 23,
+    "id": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+    "markerDetail": "190\u00d7 median",
+    "markerLabel": "41.0 MB out",
+    "mitre": [
+      {
+        "id": "T1078",
+        "name": "Valid Accounts",
+        "tactic": "Initial Access"
+      },
+      {
+        "id": "T1567",
+        "name": "Exfiltration Over Web Service",
+        "tactic": "Exfiltration"
+      }
+    ],
+    "principal": {
+      "host": "LT-022",
+      "user": "dana.k"
+    },
+    "riskScore": 91,
+    "severity": "high",
+    "summary": "dana.k sent 41.0 MB to files-sync-cdn.net in 24 minutes, 190\u00d7 this user's median hour. 23 of dana.k's 2,075 requests came from 10.20.99.47; the rest came from 10.20.2.11.",
+    "timeRange": {
+      "end": "2026-10-08T06:41:12Z",
+      "start": "2026-10-08T06:13:52Z"
+    },
+    "title": "Large outbound transfer to files-sync-cdn.net",
+    "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+  },
+  {
+    "aiVerdict": "likely_malicious",
+    "analystVerdict": {
+      "status": "open"
+    },
+    "anomalyCount": 3,
+    "eventCount": 250,
+    "id": "0c0e690d-02d7-4058-8a78-b55a9e1b7c67",
+    "markerDetail": "over 1,000\u00d7 median",
+    "markerLabel": "2.0 GB out",
+    "mitre": [
+      {
+        "id": "T1567",
+        "name": "Exfiltration Over Web Service",
+        "tactic": "Exfiltration"
+      }
+    ],
+    "principal": {
+      "host": "SRV-BACKUP-01",
+      "user": "svc-backup"
+    },
+    "riskScore": 69,
+    "severity": "high",
+    "summary": "svc-backup sent 2.0 GB to s3.us-west.backblazeb2.com in 1.7 hours, over 1,000\u00d7 a typical user's median hour. svc-backup is the only one of 25 users who reached s3.us-west.backblazeb2.com (250 requests).",
+    "timeRange": {
+      "end": "2026-10-08T06:39:34Z",
+      "start": "2026-10-08T04:59:59Z"
+    },
+    "title": "Large outbound transfer to s3.us-west.backblazeb2.com",
+    "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+  },
+  {
+    "aiVerdict": "likely_malicious",
+    "analystVerdict": {
+      "status": "open"
+    },
+    "anomalyCount": 2,
+    "eventCount": 181,
+    "id": "b0ee5cf1-02ee-4c29-8d04-657ff9e08bb9",
+    "markerDetail": "181 requests over 3.0 hours",
+    "markerLabel": "every 60 seconds",
+    "mitre": [
+      {
+        "id": "T1071.001",
+        "name": "Application Layer Protocol: Web Protocols",
+        "tactic": "Command and Control"
+      }
+    ],
+    "principal": {
+      "host": "WS-114",
+      "user": "marcus.l"
+    },
+    "riskScore": 69,
+    "severity": "high",
+    "summary": "marcus.l made 181 requests to update-chk-svc.io over 3.0 hours, one about every 60 seconds. marcus.l is the only one of 25 users who reached update-chk-svc.io (181 requests).",
+    "timeRange": {
+      "end": "2026-10-08T16:11:59Z",
+      "start": "2026-10-08T13:12:02Z"
+    },
+    "title": "Beacon-like requests to update-chk-svc.io",
+    "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+  },
+  {
+    "aiVerdict": "inconclusive",
+    "analystVerdict": {
+      "status": "open"
+    },
+    "anomalyCount": 2,
+    "eventCount": 4,
+    "id": "2810d28d-3d82-4d0c-ab4f-f8c01d6e1270",
+    "markerDetail": "4 requests, all blocked",
+    "markerLabel": "Phish.Generic",
+    "mitre": [
+      {
+        "id": "T1566.002",
+        "name": "Phishing: Spearphishing Link",
+        "tactic": "Initial Access"
+      }
+    ],
+    "principal": {
+      "host": "WS-107",
+      "user": "priya.s"
+    },
+    "riskScore": 54,
+    "severity": "medium",
+    "summary": "priya.s made 4 requests to secure-login-verify.net, which the proxy tagged as Phish.Generic (all blocked). priya.s is the only one of 25 users who reached secure-login-verify.net (4 requests).",
+    "timeRange": {
+      "end": "2026-10-08T18:37:21Z",
+      "start": "2026-10-08T18:37:02Z"
+    },
+    "title": "Request to a site the proxy flagged: secure-login-verify.net",
+    "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+  },
+  {
+    "aiVerdict": "inconclusive",
+    "analystVerdict": {
+      "status": "open"
+    },
+    "anomalyCount": 5,
+    "eventCount": 80,
+    "id": "51670816-09da-4eef-9e6f-066acdc2242a",
+    "markerDetail": "in 4 minutes, to 4 hosts",
+    "markerLabel": "80 blocked requests",
+    "mitre": [
+      {
+        "id": "T1090",
+        "name": "Proxy",
+        "tactic": "Command and Control"
+      }
+    ],
+    "principal": {
+      "host": "WS-111",
+      "user": "ben.t"
+    },
+    "riskScore": 49,
+    "severity": "medium",
+    "summary": "ben.t was blocked 80 times in 4 minutes across 4 hosts, mostly in the Anonymizer category. ben.t is the only one of 25 users who reached anon-surf.example (23 requests).",
+    "timeRange": {
+      "end": "2026-10-08T20:08:56Z",
+      "start": "2026-10-08T20:04:59Z"
+    },
+    "title": "Burst of blocked requests (Anonymizer)",
+    "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+  }
+]

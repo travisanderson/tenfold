@@ -1,0 +1,96 @@
+{
+  "anomalyCount": 41,
+  "falseNegatives": 0,
+  "falsePositives": 1,
+  "incidentCount": 5,
+  "judgeAgreement": {
+    "agreed": 0,
+    "total": 0
+  },
+  "lineCount": 48002,
+  "precision": 0.8,
+  "providers": [
+    {
+      "agreementWithAnswerKey": 0.8235294117647058,
+      "attacksCaught": 4,
+      "attacksTotal": 4,
+      "avgLatencyMs": 0,
+      "costPer1kUsd": 0,
+      "decisions": 17,
+      "falsePositives": 1,
+      "label": "Offline stand-in",
+      "provider": "mock",
+      "role": "in_use"
+    }
+  ],
+  "recall": 1,
+  "runAt": "2026-10-12T01:53:56.75734Z",
+  "sampleName": "attack-day",
+  "scoresheet": [
+    {
+      "aiVerdict": "likely_malicious",
+      "answerKey": "attack",
+      "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+      "layers": [
+        "baselines"
+      ],
+      "mark": "caught",
+      "riskScore": 91,
+      "subtitle": "dana.k \u00b7 T1078",
+      "title": "Large outbound transfer to files-sync-cdn.net"
+    },
+    {
+      "aiVerdict": "likely_malicious",
+      "answerKey": "benign",
+      "incidentId": "0c0e690d-02d7-4058-8a78-b55a9e1b7c67",
+      "layers": [
+        "baselines"
+      ],
+      "mark": "false_positive",
+      "riskScore": 69,
+      "subtitle": "svc-backup \u00b7 T1567",
+      "title": "Large outbound transfer to s3.us-west.backblazeb2.com"
+    },
+    {
+      "aiVerdict": "likely_malicious",
+      "answerKey": "attack",
+      "incidentId": "b0ee5cf1-02ee-4c29-8d04-657ff9e08bb9",
+      "layers": [
+        "baselines",
+        "rules"
+      ],
+      "mark": "caught",
+      "riskScore": 69,
+      "subtitle": "marcus.l \u00b7 T1071.001",
+      "title": "Beacon-like requests to update-chk-svc.io"
+    },
+    {
+      "aiVerdict": "inconclusive",
+      "answerKey": "attack",
+      "incidentId": "2810d28d-3d82-4d0c-ab4f-f8c01d6e1270",
+      "layers": [
+        "rules",
+        "baselines"
+      ],
+      "mark": "caught",
+      "riskScore": 54,
+      "subtitle": "priya.s \u00b7 T1566.002",
+      "title": "Request to a site the proxy flagged: secure-login-verify.net"
+    },
+    {
+      "aiVerdict": "inconclusive",
+      "answerKey": "attack",
+      "incidentId": "51670816-09da-4eef-9e6f-066acdc2242a",
+      "layers": [
+        "rules",
+        "baselines"
+      ],
+      "mark": "caught",
+      "riskScore": 49,
+      "subtitle": "ben.t \u00b7 T1090",
+      "title": "Burst of blocked requests (Anonymizer)"
+    }
+  ],
+  "truePositives": 4,
+  "uploadId": "4a8e09be-aaf9-4482-ad7a-b9baece2406a"
+}

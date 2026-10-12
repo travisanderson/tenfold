@@ -1,0 +1,266 @@
+{
+  "aiVerdict": "likely_malicious",
+  "analystStatus": "open",
+  "entities": {
+    "domains": [
+      "login.microsoftonline.com",
+      "files-sync-cdn.net"
+    ],
+    "hosts": [
+      "LT-022"
+    ],
+    "ips": [
+      "10.20.99.47"
+    ],
+    "users": [
+      "dana.k"
+    ]
+  },
+  "evidence": [
+    {
+      "action": "allowed",
+      "bytesOut": 1126,
+      "host": "login.microsoftonline.com",
+      "id": "e621",
+      "ts": "2026-10-08T06:13:52Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2150,
+      "host": "login.microsoftonline.com",
+      "id": "e625",
+      "ts": "2026-10-08T06:14:07Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 410,
+      "host": "files-sync-cdn.net",
+      "id": "e646",
+      "ts": "2026-10-08T06:17:22Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2125038,
+      "host": "files-sync-cdn.net",
+      "id": "e649",
+      "ts": "2026-10-08T06:17:41Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2511786,
+      "host": "files-sync-cdn.net",
+      "id": "e655",
+      "ts": "2026-10-08T06:18:56Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2278237,
+      "host": "files-sync-cdn.net",
+      "id": "e662",
+      "ts": "2026-10-08T06:20:18Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2209642,
+      "host": "files-sync-cdn.net",
+      "id": "e668",
+      "ts": "2026-10-08T06:21:37Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2168775,
+      "host": "files-sync-cdn.net",
+      "id": "e678",
+      "ts": "2026-10-08T06:22:46Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2372583,
+      "host": "files-sync-cdn.net",
+      "id": "e686",
+      "ts": "2026-10-08T06:24:03Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2394413,
+      "host": "files-sync-cdn.net",
+      "id": "e696",
+      "ts": "2026-10-08T06:25:17Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2374459,
+      "host": "files-sync-cdn.net",
+      "id": "e705",
+      "ts": "2026-10-08T06:26:36Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2119813,
+      "host": "files-sync-cdn.net",
+      "id": "e716",
+      "ts": "2026-10-08T06:27:53Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2131133,
+      "host": "files-sync-cdn.net",
+      "id": "e727",
+      "ts": "2026-10-08T06:29:16Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2381196,
+      "host": "files-sync-cdn.net",
+      "id": "e733",
+      "ts": "2026-10-08T06:30:35Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2253510,
+      "host": "files-sync-cdn.net",
+      "id": "e740",
+      "ts": "2026-10-08T06:31:49Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2174191,
+      "host": "files-sync-cdn.net",
+      "id": "e756",
+      "ts": "2026-10-08T06:33:11Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2120083,
+      "host": "files-sync-cdn.net",
+      "id": "e763",
+      "ts": "2026-10-08T06:34:19Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2370145,
+      "host": "files-sync-cdn.net",
+      "id": "e768",
+      "ts": "2026-10-08T06:35:35Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2440108,
+      "host": "files-sync-cdn.net",
+      "id": "e775",
+      "ts": "2026-10-08T06:36:58Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2148935,
+      "host": "files-sync-cdn.net",
+      "id": "e784",
+      "ts": "2026-10-08T06:38:13Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2188642,
+      "host": "files-sync-cdn.net",
+      "id": "e792",
+      "ts": "2026-10-08T06:39:28Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 2193964,
+      "host": "files-sync-cdn.net",
+      "id": "e798",
+      "ts": "2026-10-08T06:40:51Z",
+      "user": "dana.k"
+    },
+    {
+      "action": "allowed",
+      "bytesOut": 315,
+      "host": "files-sync-cdn.net",
+      "id": "e801",
+      "ts": "2026-10-08T06:41:12Z",
+      "user": "dana.k"
+    }
+  ],
+  "incidentId": "c87e7115-7d9a-4325-bdff-4787d762f0ce",
+  "mitre": [
+    {
+      "id": "T1078",
+      "name": "Valid Accounts",
+      "tactic": "Initial Access"
+    },
+    {
+      "id": "T1567",
+      "name": "Exfiltration Over Web Service",
+      "tactic": "Exfiltration"
+    }
+  ],
+  "provenance": {
+    "decisionProvider": "mock",
+    "detectors": [
+      "exfil_volume",
+      "new_source_ip",
+      "rare_destination",
+      "off_hours"
+    ],
+    "generatedAt": "2026-10-12T01:53:56.720066292Z",
+    "narrativeProvider": "mock"
+  },
+  "recommendedActions": [
+    "Ask dana.k whether the transfer to files-sync-cdn.net was expected.",
+    "Check who else has reached files-sync-cdn.net in earlier uploads.",
+    "Check whether dana.k was working from the unusual address."
+  ],
+  "riskScore": 91,
+  "schemaVersion": "1",
+  "severity": "high",
+  "summary": "dana.k sent 41.0 MB to files-sync-cdn.net in 24 minutes, 190\u00d7 this user's median hour. 23 of dana.k's 2,075 requests came from 10.20.99.47; the rest came from 10.20.2.11.",
+  "timeline": [
+    {
+      "eventId": "e621",
+      "label": "First request from 10.20.99.47",
+      "ts": "2026-10-08T06:13:52Z"
+    },
+    {
+      "eventId": "e646",
+      "label": "First request to files-sync-cdn.net",
+      "ts": "2026-10-08T06:17:22Z"
+    },
+    {
+      "eventId": "e646",
+      "label": "Transfer to files-sync-cdn.net begins (410 B)",
+      "ts": "2026-10-08T06:17:22Z"
+    },
+    {
+      "eventId": "e649",
+      "label": "Large transfers begin in quiet hours",
+      "ts": "2026-10-08T06:17:41Z"
+    },
+    {
+      "eventId": "e801",
+      "label": "Transfer ends; 41.0 MB sent in all",
+      "ts": "2026-10-08T06:41:12Z"
+    }
+  ],
+  "tokenEstimate": 1102
+}
