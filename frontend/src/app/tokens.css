@@ -59,8 +59,7 @@
 
   /* Type */
   --font-sans: "Bricolage Grotesque Variable", system-ui, sans-serif;
-  --font-display:
-    "Michroma", var(--font-sans); /* the wordmark and breadcrumbs */
+  --font-display: "Michroma", var(--font-sans); /* the wordmark */
   --font-mono:
     "Spline Sans Mono Variable", ui-monospace, monospace; /* log data, IPs, domains, event IDs, counts */
 
