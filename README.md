@@ -44,13 +44,13 @@ I kicked off this process with this design doc that I wrote by hand, with clear 
 This is where the stack and architecture ended up. I'm proud of it, pretty slick. See STACK.md to view more.\
 [-> View Finished Stack](./explained/Stack.md)
 
-One headline I will highlight here: I used one OpenAPI file, which generates the types for both sides - Go and Typescript.\
-One file, one contract, both languages. No drift.\
-Jump right into the spec [here](https://tenfold-api.up.railway.app/docs#description/introduction).
+One headline I will highlight here: I used one OpenAPI file, which generates the types for both sides - Go and Typescript. One file, one contract, both languages. No drift.
+
+Jump right into the API Docs [here](https://tenfold-api.up.railway.app/docs#description/introduction).
 
 ## Walkthrough
 
--> You can view the walkthrough video [here]().\
+-> You can view the walkthrough video [here](https://www.loom.com/embed/b6890c734c0c4ce1acccd4d3f4e00f02).\
 ..or...\
 -> The written version is found [here](./explained/Walkthrough.md).
 
