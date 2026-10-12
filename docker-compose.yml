@@ -16,14 +16,15 @@
 name: tenfold
 
 services:
-  # Writes the three demo logs into ./samples the first time, so "Load demo
-  # data" works and there is a file on disk to upload by hand. About 90 MB.
+  # Copies the three demo logs into a volume the API reads, so "Load demo
+  # data" works. The image writes them from a seed as it builds. About 90 MB.
+  # To upload one by hand, copy it out first:
+  #
+  #   docker compose cp samples:/generated/attack-day.log .
   samples:
-    image: golang:1.27
-    working_dir: /src
+    build: ./samples
     volumes:
-      - ./samples:/src
-    command: sh -c "test -f attack-day.log || go run ./loggen --all --seed 42"
+      - demo-logs:/samples
 
   # The Go API. It applies the database schema each time it starts.
   api:
@@ -36,7 +37,7 @@ services:
       PORT: "8080"
       SAMPLES_DIR: /samples
     volumes:
-      - ./samples:/samples:ro
+      - demo-logs:/samples:ro
     ports:
       - "8080:8080"
     # Supabase runs beside these containers, not among them. On Linux this
@@ -60,3 +61,6 @@ services:
     depends_on:
       - api
     restart: on-failure
+
+volumes:
+  demo-logs:

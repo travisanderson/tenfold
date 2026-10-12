@@ -1,0 +1,5 @@
+# The image writes its own logs; the ones on disk stay out of the build.
+*.log
+*.answers.json
+holdout/
+*.md
