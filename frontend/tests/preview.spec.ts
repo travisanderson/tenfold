@@ -1,4 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
+test.skip(
+  process.env.TENFOLD_FIXTURE_MODE !== "true",
+  "Run against an explicit fixture-mode server.",
+);
 async function loadPreview(page: Page, route: string) {
   await page.goto("/uploads");
   await page

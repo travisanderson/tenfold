@@ -1,45 +1,39 @@
-# Tenfold frontend preview
+# Tenfold frontend
 
-Run `npm install`, then `npm run dev` from this folder. Open http://127.0.0.1:3000/uploads.
+Run `npm install`, copy `.env.example` to `.env.local`, set the Supabase publishable key, then run `npm run dev`. Open http://127.0.0.1:3000 and sign in with an existing Supabase email/password account. Keep passwords out of configuration files and commits.
 
-The preview implements all eight mockup views with typed fixtures. It works independently of the backend. A fresh session starts empty: the homepage leads to Triage, which redirects to Uploads until data is loaded. Click **Load demo data** to begin. Decisions, assignment, notes, and lessons remain in memory while navigating in the tab; refreshing resets them and returns the workspace to its empty state. Loading demo data creates a separate sample investigation. Real file analysis and Supabase sign-in are not connected yet. The file picker validates extensions and size, then explains that limitation.
+Live mode is the default. The logo opens Triage; an account with no uploads lands on Uploads. Uploaded files, demo runs, notes, assignment, verdicts, and lessons are stored by the backend and survive refreshes. Display timezone stays selected while navigating.
+
+## Live integration
+
+- Supabase cookie sessions are verified on the server and refreshed by Next.js Proxy. Sign out clears the session. Backend `401` responses lead to sign-in.
+- `src/lib/api/client.ts` is the server-only, typed `openapi-fetch` boundary. Server Components load screens and Server Actions perform mutations. The browser never calls the Go API directly.
+- `.log` files register as `text/plain`; `.csv` files register as `text/csv`. A browser PUT sends the file to the signed storage URL without an authorization header. Files are limited to 50 MB.
+- Load demo data registers `attack-day` on the server. Progress passes through an authenticated SSE relay. Streams close on completion, error, or partial status; the client then reads the upload again. Interrupted streams offer Reconnect.
+- Demo samples deliberately pause for malformed lines. “Analyse the good lines” sends `acceptParseErrors: true`. The completed run shows skipped-line counts in Triage.
+- Triage uses incident summaries and 10-minute/hourly time series. Incident detail, notes, assignment, verdicts, and lesson previews use their contract endpoints.
+- Event search, action/time/anomaly filters, and pagination run on the server. The global search opens Events with the same query. Export streams NDJSON through Next.js without buffering the whole file.
+- Scorecard and anomalies use live responses. A single judge displays no invented comparison or agreement percentage. The deployed backend currently uses a mock AI provider; this is separate from frontend fixture mode.
+
+`../api/openapi.yaml` remains the source of truth. Do not hand-edit generated `src/lib/api/schema.d.ts`.
 
 ## Screens
 
-- `/uploads`: React Flow pipeline, drop zone, recent uploads.
-- `/triage`: Chart.js risk timeline, hourly volume, incident cards.
-- `/incidents/{id}` (open a card from Triage): linked citations, chart, graph, signals, evidence, notes, assignment, verdicts, teaching dialog.
-- `/events`: TanStack Table and Virtual, search, time/action filters, columns, J/K navigation, raw log drawer.
-- `/states`: processing, completed, empty, malformed, partial, unavailable AI, and failure scenarios.
-- `/scorecard`: answer-key comparison and two judges.
-- `/anomalies`: disposition and judge-disagreement review.
+- `/sign-in`: Supabase email/password sign-in.
+- `/uploads`: static pipeline, file picker, demo loading, resumable job states, recent uploads.
+- `/triage`: risk timeline, event volume, incident cards.
+- `/incidents/{id}`: linked citations, graph, signals, evidence, notes, assignment, verdicts, teaching.
+- `/events`: virtualized results, server search and filters, columns, J/K navigation, raw log drawer, export.
+- `/scorecard`: answer-key comparison and provider results.
+- `/anomalies`: disposition and judge disagreement filters.
 
-At phone width, the incident puts interpretation and measured signals first. Evidence, activity graph, request chart, timeline, and notes collapse. The upload pipeline is static: no pan, zoom, or view controls. The incident activity graph keeps its controls; wheel and pinch zoom remain disabled.
+At phone width, evidence, graph, chart, timeline, and notes collapse. The upload pipeline has no pan, zoom, or view controls. The incident graph retains its buttons; wheel and pinch zoom remain disabled.
 
-## API contract and Prism
+## Isolated fixture preview
 
-`../api/openapi.yaml` remains the source of truth. The existing generated types in `src/lib/api/schema.d.ts` type-check every fixture. `src/lib/api/client.ts` provides a server-only `openapi-fetch` client for the backend handoff. It is not connected to the preview yet; the browser must never send real API requests directly to the Go service.
+Set `TENFOLD_FIXTURE_MODE=true` and restart Next.js to use the original design preview without sign-in. It starts empty; Load demo data creates three sample incidents. Changes stay in memory and reset on refresh. `/states` is available only in this mode. Live mode never substitutes fixture results for an API failure.
 
-In a second terminal, run:
-
-```sh
-npm run mock:api
-```
-
-Prism reads the existing contract without modifying it and listens on http://127.0.0.1:4010. `npm run mock:check` checks health, uploads, incident detail, and request validation. The UI keeps linked, stateful fixtures because independently generated Prism examples do not maintain the relationships needed for an investigation.
-
-The authored preview contains three visible incidents and 208 evidence events. Its upload-level totals and illustrative evaluation scores are fixtures, not measured backend performance. The scorecard includes a fourth planted attack marked as missed. Prism and all browser checks run locally.
-
-## Design choices
-
-- Search appears on every screen and searches loaded sample events now. It is disabled before data is loaded.
-- The logo opens the Triage homepage. Incidents use title breadcrumbs rather than a main navigation tab.
-- Times default to Eastern, with a UTC selector. Raw logs remain in UTC and retain all 21 tab-separated fields.
-- Critical/low severity use the proposed token colors with an icon and text.
-- The API wins over drawings: `.log`/`.csv`, 50 MB, five stages displayed as four nodes, and no unsupported pipeline drilldown or “See them” lesson link.
-- One incident selection drives the chart, graph, and table. No detection or score calculation lives in UI components.
-- The lesson dialog uses the scopes belonging to the incident being dismissed. Preview counts are authored API-shaped fixture responses.
-- Operational scenarios demonstrate their actions locally; the processing snapshot is not a running detection job. Progress labels and counts read upload stage fields; live progress still awaits the API connection.
+For independent contract checks, `npm run mock:api` starts Prism on http://127.0.0.1:4010. `npm run mock:check` checks its responses and request validation.
 
 ## Checks
 
@@ -47,8 +41,11 @@ The authored preview contains three visible incidents and 208 evidence events. I
 npm run typecheck
 npm run lint
 npm run build
-npm run test:e2e
-npm run mock:check
+# Against a running live-mode dev server; set these in your shell:
+# TENFOLD_TEST_EMAIL and TENFOLD_TEST_PASSWORD
+npx playwright test tests/live.spec.ts --workers=1
+# Against a separate fixture-mode dev server:
+TENFOLD_FIXTURE_MODE=true npx playwright test tests/preview.spec.ts
 ```
 
-Browser tests require the dev server and installed Chrome. They check desktop/mobile overflow, the investigation flow, citations, decisions, notes, filters, raw fields, keyboard navigation, lessons, graph scrolling, and collapsed mobile panels. Screenshots are written to the ignored `test-results/` folder. `npm run format` formats source while excluding generated API types.
+Browser tests use installed Chrome. Live tests create demo uploads in the test account and leave a completed investigation for review. They check auth, malformed-line handling, progress, refresh persistence, analyst actions, backend search/pagination, scorecard, anomalies, mobile layout, and sign-out. Fixtures have separate desktop/mobile design checks. Test screenshots and browser artifacts are ignored in `test-results/`.
