@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavigationLink as Link } from "./navigation-link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -38,7 +38,8 @@ export function Events() {
         .sort((a, b) => a.ts.localeCompare(b.ts)),
     [incidents, upload],
   );
-  const [query, setQuery] = useState(params.get("q") ?? "");
+  // The API reads at most 200 characters of search.
+  const [query, setQuery] = useState((params.get("q") ?? "").slice(0, 200));
   const [action, setAction] = useState("");
   const [anomalous, setAnomalous] = useState(false);
   const [hour, setHour] = useState("");
@@ -60,7 +61,7 @@ export function Events() {
     async (cursor?: string) =>
       unwrap(
         await eventPage(upload, {
-          limit: 200,
+          limit: 100,
           cursor,
           q: query || undefined,
           action: action ? (action as Schema["EventAction"]) : undefined,
@@ -175,6 +176,14 @@ export function Events() {
     overscan: 8,
   });
   const items = virtual.getVirtualItems();
+  // Fetch the next page before the reader reaches the end of this one.
+  const lastShown = items.at(-1)?.index ?? 0;
+  const nearEnd = rows.length > 0 && lastShown >= rows.length - 20;
+  const { more, busy: loadingPage, error: pageError } = remote;
+  const hasMore = Boolean(remote.page.nextCursor);
+  useEffect(() => {
+    if (!demo && nearEnd && hasMore && !loadingPage && !pageError) void more();
+  }, [demo, nearEnd, hasMore, loadingPage, pageError, more]);
   const top = items[0]?.start ?? 0;
   const bottom = items.length ? virtual.getTotalSize() - items.at(-1)!.end : 0;
   function choose(index: number) {
@@ -423,7 +432,7 @@ export function Events() {
               {demo
                 ? "matching preview events"
                 : `of ${number(remote.page.total)} matching events loaded`}
-              . The list renders as you scroll.
+              . More load as you scroll.
             </span>
             <span>J and K move the selection · Enter opens the raw line</span>
           </footer>
@@ -434,7 +443,9 @@ export function Events() {
                   Load more events
                 </button>
               )}
-              <a href={`/api/uploads/${upload}/export`}>Export all events</a>
+              <a className="button" href={`/api/uploads/${upload}/export`}>
+                Export all events
+              </a>
             </div>
           )}
         </section>

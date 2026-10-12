@@ -3,6 +3,39 @@ import { NavigationLink as Link } from "./navigation-link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/app/sign-in/actions";
 import { useState } from "react";
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path
+        d="M2 7.2 8 2l6 5.2V14h-4v-4H6v4H2z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function Chevron() {
+  return (
+    <svg
+      className="crumb-chevron"
+      viewBox="0 0 16 16"
+      width="12"
+      height="12"
+      aria-hidden="true"
+    >
+      <path
+        d="m6 3 5 5-5 5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 export function Shell({
   children,
   demo,
@@ -98,14 +131,24 @@ export function Shell({
       <nav className="breadcrumbs" aria-label="Breadcrumb">
         <ol>
           <li>
-            {pathname === "/triage" ? (
-              <span aria-current="page">Triage</span>
-            ) : (
-              <Link href={`/triage${suffix}`}>Triage</Link>
-            )}
+            <Link href={`/triage${suffix}`}>
+              <HomeIcon />
+              Tenfold
+            </Link>
           </li>
+          {(pathname === "/triage" || pathname.startsWith("/incidents/")) && (
+            <li>
+              <Chevron />
+              {pathname === "/triage" ? (
+                <span aria-current="page">Triage</span>
+              ) : (
+                <Link href={`/triage${suffix}`}>Triage</Link>
+              )}
+            </li>
+          )}
           {pathname !== "/triage" && (
             <li>
+              <Chevron />
               <span aria-current="page">
                 {incidentTitle ??
                   {

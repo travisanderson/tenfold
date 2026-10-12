@@ -43,6 +43,7 @@ export function LiveUploadState({ upload }: { upload: Upload }) {
         aria-busy={busy}
       >
         <UploadState
+          modal
           upload={upload}
           resume={(accept) => void run(false, accept)}
           cancel={() => void run(true)}

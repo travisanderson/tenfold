@@ -97,17 +97,26 @@ for (const width of [1440, 390]) {
     await expect(
       page.getByText("Called Dana to verify the transfer.", { exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Confirm malicious", exact: true })
-      .click();
-    await expect(
-      page
-        .getByRole("status")
-        .filter({ hasText: "Analyst decision saved: confirmed." }),
-    ).toBeVisible();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
     await page.screenshot({
       path: `test-results/incident-${width}.png`,
+      fullPage: true,
+    });
+    // A decision is recorded, then the analyst is back on triage, where
+    // the card has moved to Decided.
+    await page
+      .getByRole("button", { name: "Confirm malicious", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/triage\?/);
+    await expect(
+      page.getByRole("status").filter({ hasText: "Decision saved" }),
+    ).toBeVisible();
+    await expect(page.locator(".incident-card")).toHaveCount(2);
+    await page.getByRole("tab", { name: /Decided/ }).click();
+    await expect(page.locator(".incident-card")).toHaveCount(1);
+    await expect(page.locator(".verdict-badge")).toHaveText("confirmed");
+    await page.screenshot({
+      path: `test-results/triage-decided-${width}.png`,
       fullPage: true,
     });
   });
@@ -195,7 +204,7 @@ for (const width of [1440, 390]) {
       page.getByRole("heading", { name: "What an upload can turn into." }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Analyse the good lines" }),
+      page.getByRole("button", { name: "Analyze the good lines" }),
     ).toBeVisible();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
     await page.screenshot({
@@ -308,7 +317,7 @@ test("a fresh sample keeps its analyst decision separate from the original uploa
   await page
     .getByRole("button", { name: "Confirm malicious", exact: true })
     .click();
-  await page.getByRole("link", { name: /← Triage · incident/ }).click();
+  await expect(page).toHaveURL(/\/triage\?/);
   await expect(page.locator(".stats")).toContainText("1/3");
   await page.getByRole("link", { name: "Uploads", exact: true }).click();
   const newest = page.locator(".recent-uploads tbody tr").first();

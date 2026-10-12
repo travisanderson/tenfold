@@ -20,6 +20,21 @@ export function time(
     hourCycle: "h23",
   }).format(new Date(value));
 }
+/** Clock time for charts and cards: "2:14 AM". Log rows keep the 24-hour
+ * form, which is how the lines were written. */
+export function clock(
+  value: string,
+  zone = "America/New_York",
+  seconds = false,
+) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: zone,
+    hour: "numeric",
+    minute: "2-digit",
+    ...(seconds ? { second: "2-digit" } : {}),
+    hour12: true,
+  }).format(new Date(value));
+}
 export function date(value: string, zone = "America/New_York") {
   return new Intl.DateTimeFormat("en-US", {
     timeZone: zone,

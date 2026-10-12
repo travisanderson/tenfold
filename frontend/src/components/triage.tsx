@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { NavigationLink as Link } from "./navigation-link";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useWorkspace } from "./workspace";
@@ -6,7 +7,7 @@ import { LiveUploadState } from "./live-upload-state";
 import { UploadState } from "./upload-state";
 import { RiskTimeline, VolumeStrip } from "./charts";
 import { riskSeries, volumeSeries } from "@/lib/incident-fixtures";
-import { date, number, time, words } from "@/lib/format";
+import { clock, date, number, words } from "@/lib/format";
 import type { Schema } from "@/lib/types";
 export function Severity({ value }: { value: Schema["Severity"] }) {
   return (
@@ -19,6 +20,7 @@ export function Triage() {
   const state = useWorkspace();
   const query = useSearchParams();
   const router = useRouter();
+  const [chosenTab, setTab] = useState<"open" | "decided" | null>(null);
   const upload = state.uploads.find(
     (u) => u.id === (query.get("upload") ?? state.selectedUploadId),
   );
@@ -34,6 +36,7 @@ export function Triage() {
       <LiveUploadState upload={upload} />
     ) : (
       <UploadState
+        modal
         upload={upload}
         resume={() =>
           state.setUploads((items) =>
@@ -53,6 +56,10 @@ export function Triage() {
   const decided = incidents.filter(
     (i) => i.analystVerdict.status !== "open",
   ).length;
+  const open = incidents.length - decided;
+  // Open work comes first. With nothing left open, show what was decided.
+  const tab = chosenTab ?? (open || !decided ? "open" : "decided");
+  const justDecided = incidents.find((i) => i.id === query.get("decided"));
   return (
     <>
       {!state.demo && upload.status === "partial" && (
@@ -80,6 +87,12 @@ export function Triage() {
           Uploaded{" "}
           <span className="mono">{date(upload.createdAt, state.zone)}</span>
         </span>
+        {!!upload.parseErrorCount && (
+          <span className="partial-badge">
+            ▲ Partial read · {number(upload.parseErrorCount)} malformed lines
+            skipped
+          </span>
+        )}
         <Link href="/uploads">all uploads</Link>
       </section>
       <section className="hero triage-hero">
@@ -109,12 +122,6 @@ export function Triage() {
           </div>
         </div>
       </section>
-      {!!upload.parseErrorCount && (
-        <p className="notice">
-          Partial read: {number(upload.parseErrorCount)} malformed lines were
-          skipped.
-        </p>
-      )}
       {incidents.length > 0 ? (
         <>
           <div className="section-heading">
@@ -123,7 +130,7 @@ export function Triage() {
               {state.zone === "UTC" ? "UTC" : "your selected zone"}
             </strong>
             <span>
-              The line is the highest risk score in each 10 minutes. The grey
+              The line is the highest risk score in each 10 minutes. The gray
               band is everything under the threshold of {upload.riskThreshold}.
             </span>
           </div>
@@ -140,8 +147,8 @@ export function Triage() {
                   <span>
                     <strong>{i.markerLabel}</strong>
                     <small className="mono">
-                      {time(i.timeRange.start, state.zone)}–
-                      {time(i.timeRange.end, state.zone)} · {i.markerDetail}
+                      {clock(i.timeRange.start, state.zone)}–
+                      {clock(i.timeRange.end, state.zone)} · {i.markerDetail}
                     </small>
                   </span>
                 </button>
@@ -162,52 +169,98 @@ export function Triage() {
             zone={state.zone}
           />
           <p className="caption">Bars: event volume per hour</p>
-          <section className="incident-cards section">
-            {incidents.map((i, index) => (
-              <article key={i.id} className="panel incident-card">
-                <div className="card-top">
-                  <span className={`marker ${i.severity}`}>{index + 1}</span>
-                  <Severity value={i.severity} />
-                  <small className="mono">
-                    {time(i.timeRange.start, state.zone)}–
-                    {time(i.timeRange.end, state.zone)}
-                  </small>
-                </div>
-                <h2>{i.title}</h2>
-                <div className="card-risk">
-                  <span className="risk-number">
-                    {i.riskScore}
-                    <small>/100 risk</small>
-                  </span>
-                  <span>
-                    AI assessment:{" "}
-                    {i.aiVerdict ? words(i.aiVerdict) : "not available"}
-                  </span>
-                </div>
-                <div className="ai-panel">
-                  <span className="eyebrow">AI interpretation</span>
-                  <p>{i.summary ?? "Not available for this incident."}</p>
-                </div>
-                <p className="mono caption">
-                  {i.principal.user} · {i.principal.host} ·{" "}
-                  {number(i.eventCount)} events ·{" "}
-                  {i.mitre.map((m) => `Possible ${m.id}`).join(" · ")}
-                </p>
-                <p className="caption">
-                  Owner: {i.assignee?.name ?? "unassigned"} ·{" "}
-                  {i.analystVerdict.status === "open"
-                    ? "New"
-                    : words(i.analystVerdict.status)}
-                </p>
-                <Link
-                  className={`button ${index === 0 ? "primary" : "accent-button"}`}
-                  href={`/incidents/${i.id}?upload=${upload.id}`}
-                >
-                  Open incident
-                </Link>
-              </article>
+          {justDecided && (
+            <p className="decision-saved" role="status">
+              Decision saved: <strong>{justDecided.title}</strong> is{" "}
+              {words(justDecided.analystVerdict.status)}.{" "}
+              {open
+                ? `${number(open)} still open.`
+                : "Every incident is decided."}
+            </p>
+          )}
+          <div className="tabs section" role="tablist" aria-label="Incidents">
+            {(
+              [
+                ["open", "Open", open],
+                ["decided", "Decided", decided],
+              ] as const
+            ).map(([id, label, count]) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => setTab(id)}
+              >
+                {label} <span className="mono">{count}</span>
+              </button>
             ))}
+          </div>
+          <section className="incident-cards">
+            {incidents.map((i, index) =>
+              (i.analystVerdict.status === "open") !==
+              (tab === "open") ? null : (
+                <article
+                  key={i.id}
+                  className={`panel incident-card ${i.analystVerdict.status}`}
+                >
+                  <div className="card-top">
+                    <span className={`marker ${i.severity}`}>{index + 1}</span>
+                    <Severity value={i.severity} />
+                    {i.analystVerdict.status !== "open" && (
+                      <span
+                        className={`verdict-badge ${i.analystVerdict.status}`}
+                      >
+                        {words(i.analystVerdict.status)}
+                      </span>
+                    )}
+                    <small className="mono">
+                      {clock(i.timeRange.start, state.zone)}–
+                      {clock(i.timeRange.end, state.zone)}
+                    </small>
+                  </div>
+                  <h2>{i.title}</h2>
+                  <div className="card-risk">
+                    <span className="risk-number">
+                      {i.riskScore}
+                      <small>/100 risk</small>
+                    </span>
+                    <span>
+                      AI assessment:{" "}
+                      {i.aiVerdict ? words(i.aiVerdict) : "not available"}
+                    </span>
+                  </div>
+                  <div className="ai-panel">
+                    <span className="eyebrow">AI interpretation</span>
+                    <p>{i.summary ?? "Not available for this incident."}</p>
+                  </div>
+                  <p className="mono caption">
+                    {i.principal.user} · {i.principal.host} ·{" "}
+                    {number(i.eventCount)} events ·{" "}
+                    {i.mitre.map((m) => `Possible ${m.id}`).join(" · ")}
+                  </p>
+                  <p className="caption">
+                    Owner: {i.assignee?.name ?? "unassigned"}
+                  </p>
+                  {/* The link covers the whole card; see .incident-card in the CSS. */}
+                  <Link
+                    className="button accent-button"
+                    href={`/incidents/${i.id}?upload=${upload.id}`}
+                  >
+                    {i.analystVerdict.status === "open"
+                      ? "Open incident"
+                      : "Review incident"}
+                  </Link>
+                </article>
+              ),
+            )}
           </section>
+          {!(tab === "open" ? open : decided) && (
+            <p className="panel caption">
+              {tab === "open"
+                ? "Nothing is open. Every incident in this upload has a decision."
+                : "No decisions yet. Open an incident to confirm, dismiss or escalate it."}
+            </p>
+          )}
         </>
       ) : (
         <div className="panel">

@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useState } from "react";
 import { NavigationLink as Link } from "./navigation-link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useWorkspace } from "./workspace";
 import { ResponsiveDisclosure } from "./responsive-disclosure";
 import { TeachDialog } from "./teach-dialog";
@@ -11,7 +11,14 @@ import { ActivityGraph } from "./activity-graph";
 import { EvidenceTable, CopyButton } from "./evidence";
 import { saveVerdict, assignIncident, addNote } from "@/lib/api/actions";
 import { unwrap } from "@/lib/api/result";
-import { safeError, citationLabel, date, time, words } from "@/lib/format";
+import {
+  safeError,
+  citationLabel,
+  clock,
+  date,
+  time,
+  words,
+} from "@/lib/format";
 import type { Schema } from "@/lib/types";
 export function IncidentScreen() {
   const {
@@ -25,6 +32,7 @@ export function IncidentScreen() {
   } = useWorkspace();
   const params = useParams<{ screen: string[] }>();
   const query = useSearchParams();
+  const router = useRouter();
   const incident = incidents.find((i) => i.id === params.screen[1]);
   const [teaching, setTeaching] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -65,24 +73,21 @@ export function IncidentScreen() {
       setIncidents((items) =>
         items.map((i) => (i.id === incident.id ? { ...i, ...saved } : i)),
       );
-      setMessage(
-        lesson
-          ? "Incident dismissed and lesson saved."
-          : `Analyst decision saved: ${status}.`,
+    } else {
+      setIncidents((items) =>
+        items.map((i) =>
+          i.id === incident.id
+            ? {
+                ...i,
+                analystVerdict: { status, decidedAt: new Date().toISOString() },
+              }
+            : i,
+        ),
       );
-      return;
     }
-    setIncidents((items) =>
-      items.map((i) =>
-        i.id === incident.id
-          ? {
-              ...i,
-              analystVerdict: { status, decidedAt: new Date().toISOString() },
-            }
-          : i,
-      ),
-    );
-    setMessage(`Analyst decision saved: ${status}.`);
+    // The decision is recorded. Back to triage, where the card now shows
+    // it and the rest of the open incidents wait.
+    router.push(`/triage?upload=${upload}&decided=${incident.id}`);
   };
   return (
     <div className="incident-screen">
@@ -227,14 +232,14 @@ export function IncidentScreen() {
           <div className="section-heading">
             <strong>
               {incident.principal.user} · bytes out per request ·{" "}
-              {time(incident.chart.window.start, zone)} to{" "}
-              {time(incident.chart.window.end, zone)}
+              {clock(incident.chart.window.start, zone)} to{" "}
+              {clock(incident.chart.window.end, zone)}
             </strong>
             <span>
               Each bar is one request.{" "}
               {incident.chart.baselineBytesOut === undefined
                 ? "No baseline is available."
-                : "The grey band is this user’s median request size in this file."}
+                : "The gray band is this user’s median request size in this file."}
             </span>
           </div>
           <IncidentChart

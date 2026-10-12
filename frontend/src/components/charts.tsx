@@ -15,7 +15,7 @@ import { Line, Bar } from "react-chartjs-2";
 import { useEffect, useState } from "react";
 import type { Schema, Incident } from "@/lib/types";
 import { ChartSkeleton } from "./skeleton";
-import { time, bytes } from "@/lib/format";
+import { clock, bytes } from "@/lib/format";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -124,7 +124,7 @@ export function RiskTimeline({
         role="img"
         options={options}
         data={{
-          labels: points.map((v) => time(v.ts, zone)),
+          labels: points.map((v) => clock(v.ts, zone)),
           datasets: [
             {
               data: points.map((v) => v.peakRiskScore),
@@ -165,7 +165,7 @@ export function VolumeStrip({
         aria-label="Event volume per hour"
         role="img"
         data={{
-          labels: series.points.map((v) => time(v.ts, zone)),
+          labels: series.points.map((v) => clock(v.ts, zone)),
           datasets: [
             {
               data: series.points.map((v) => v.total),
@@ -226,7 +226,7 @@ export function IncidentChart({
           label: (ctx) =>
             `${events[ctx.dataIndex].id} · ${bytes(ctx.parsed.y ?? 0)} out`,
           title: (items) =>
-            items[0] ? time(events[items[0].dataIndex].ts, zone, true) : "",
+            items[0] ? clock(events[items[0].dataIndex].ts, zone, true) : "",
         },
       },
       annotation: {
@@ -256,7 +256,7 @@ export function IncidentChart({
           maxTicksLimit: 7,
           maxRotation: 0,
           callback: (value) =>
-            time(new Date(Number(value)).toISOString(), zone),
+            clock(new Date(Number(value)).toISOString(), zone),
         },
       },
       y: { display: false, beginAtZero: true },

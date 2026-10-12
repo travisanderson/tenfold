@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { safeError } from "@/lib/format";
 type Page<T> = { items: T[]; total: number; nextCursor?: string };
 export function usePagedData<T>(
@@ -36,13 +36,14 @@ export function usePagedData<T>(
       generation.current = current + 1;
     };
   }, [fetchPage, enabled, retry, initial]);
-  async function more() {
-    if (busy || !page.nextCursor) return;
+  const nextCursor = page.nextCursor;
+  const more = useCallback(async () => {
+    if (busy || !nextCursor) return;
     const current = generation.current;
     setLoading("append");
     setError("");
     try {
-      const data = await fetchPage(page.nextCursor);
+      const data = await fetchPage(nextCursor);
       if (generation.current === current)
         setPage((previous) => ({
           ...data,
@@ -53,7 +54,7 @@ export function usePagedData<T>(
     } finally {
       if (generation.current === current) setLoading(null);
     }
-  }
+  }, [busy, nextCursor, fetchPage]);
   return {
     page,
     busy,

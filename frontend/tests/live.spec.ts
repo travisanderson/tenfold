@@ -45,7 +45,7 @@ test("live demo, progress, durable investigation, search, and scorecard", async 
     .getByRole("button", { name: "Load demo data", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Analyse the good lines" }),
+    page.getByRole("button", { name: "Analyze the good lines" }),
   ).toBeVisible({ timeout: 30_000 });
   await expect(
     page.getByRole("heading", { name: "48 of 48,002 lines could not be read" }),
@@ -53,7 +53,7 @@ test("live demo, progress, durable investigation, search, and scorecard", async 
   await expect(
     page.locator(".pipeline-canvas .react-flow__controls"),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Analyse the good lines" }).click();
+  await page.getByRole("button", { name: "Analyze the good lines" }).click();
   await expect(
     page.getByRole("heading", { name: "Analysis complete · 5 incidents" }),
   ).toBeVisible({ timeout: 30_000 });
@@ -84,9 +84,16 @@ test("live demo, progress, durable investigation, search, and scorecard", async 
   await page
     .getByRole("button", { name: "Confirm malicious", exact: true })
     .click();
+  // A decision returns to triage. Reopen the incident from Decided to
+  // check that everything on it was stored.
+  await expect(page).toHaveURL(/\/triage\?/);
   await expect(
-    page.getByText("Analyst decision saved: confirmed.", { exact: true }),
+    page.getByRole("status").filter({ hasText: "Decision saved" }),
   ).toBeVisible();
+  await page.getByRole("tab", { name: /Decided/ }).click();
+  await page
+    .getByRole("link", { name: "Review incident", exact: true })
+    .click();
   await page.reload();
   await expect(
     page.getByRole("button", { name: "Unassign", exact: true }),

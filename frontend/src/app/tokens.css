@@ -27,7 +27,7 @@
   --color-text-data: #c5d2e0; /* raw log lines, secondary monospace values */
   --color-text-on-accent: #070b14;
 
-  /* Accent: the one interactive colour */
+  /* Accent: the one interactive color */
   --color-accent: #6fd0e6;
   --color-accent-hover: #a8e6f4;
   --color-accent-2: #5bb4c9; /* risk bar, second segment */
@@ -40,7 +40,7 @@
   --color-ai-text: #c9e3ec;
   --color-ai-label: var(--color-accent);
 
-  /* Severity. Always pair the colour with its label and icon. */
+  /* Severity. Always pair the color with its label and icon. */
   --color-severity-high: #ff9d4d; /* triangle icon */
   --color-severity-medium: #e8c95a; /* square icon */
   --color-severity-critical: #ff6b5e; /* not drawn in the mockups; proposed */
@@ -59,6 +59,8 @@
 
   /* Type */
   --font-sans: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-display:
+    "Michroma", var(--font-sans); /* the wordmark and breadcrumbs */
   --font-mono:
     "Spline Sans Mono Variable", ui-monospace, monospace; /* log data, IPs, domains, event IDs, counts */
 
@@ -101,6 +103,10 @@
   --section-gap: 36px; /* between page sections */
   --panel-padding: 24px; /* inside cards and panels */
   --table-row-padding: 11px 20px;
+
+  /* Icons. A data URI cannot read a variable, so the stroke repeats
+     --color-text-secondary. */
+  --icon-chevron-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 6 5 5 5-5' fill='none' stroke='%239db0c4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   /* Controls */
   --control-sm: 34px; /* inline buttons in a panel */

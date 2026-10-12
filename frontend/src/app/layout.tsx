@@ -3,6 +3,7 @@ import { WorkspaceProvider } from "@/components/workspace";
 import type { Metadata } from "next";
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/spline-sans-mono";
+import "@fontsource/michroma";
 import "@xyflow/react/dist/style.css";
 import "./tokens.css";
 import "./globals.css";

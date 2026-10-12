@@ -160,7 +160,10 @@ export function Uploads() {
         header: "Status",
         cell: ({ row: { original: u } }) =>
           u.status === "processing" ? (
-            <span className="accent">Processing · {u.progress}%</span>
+            <span className="accent">
+              <span className="spinner" />
+              Processing · {u.progress}%
+            </span>
           ) : u.status !== "completed" ? (
             <button
               className="text-button"
@@ -218,6 +221,9 @@ export function Uploads() {
             {active ? (
               <>
                 {" "}
+                {active.status === "processing" && (
+                  <span className="spinner accent" />
+                )}
                 {active.status === "processing"
                   ? `${stageNames[active.stage]} · Stage ${stageNumbers[active.stage]} of 4.`
                   : active.status === "completed"
@@ -245,7 +251,7 @@ export function Uploads() {
           <Pipeline upload={active} />
           <p className="caption">
             {active.status === "processing"
-              ? "Dashed lines are moving now. Counts update as each stage runs."
+              ? "The moving line leads into the stage at work. Counts update as each stage runs."
               : active.status === "completed"
                 ? "All stages finished. Open triage to review the results."
                 : "Review the upload status below to continue."}
@@ -283,6 +289,7 @@ export function Uploads() {
                 }
               }}
             >
+              {busy && <span className="spinner" />}
               {busy ? "Loading…" : "Load demo data"}
             </button>
           </div>

@@ -22,7 +22,11 @@ function PipelineNode({ data }: NodeProps<StageNode>) {
       <Handle type="target" position={Position.Left} />
       <strong>{data.title}</strong>
       <span>{data.detail}</span>
-      <small>{data.footer}</small>
+      <small>
+        {data.state === "running" && <span className="spinner" />}
+        {data.state === "done" && <span aria-hidden="true">✓ </span>}
+        {data.footer}
+      </small>
       <Handle type="source" position={Position.Right} />
     </div>
   );
@@ -76,7 +80,7 @@ export function Pipeline({ upload }: { upload: Upload }) {
           upload.status === "completed"
             ? `${number(upload.incidentCount)} ready to review`
             : "ready when",
-        state: "pending",
+        state: upload.status === "completed" ? "done" : "pending",
         footer:
           upload.status === "completed" ? "analysis complete" : "judging ends",
       },
@@ -87,8 +91,8 @@ export function Pipeline({ upload }: { upload: Upload }) {
       position: { x: 810, y: 200 },
       data: {
         title: "Set aside",
-        detail: `${number(Math.max(0, (judge?.processed ?? 0) - (judge?.countOut ?? 0)))} so far`,
-        state: "pending",
+        detail: `${number(Math.max(0, (judge?.processed ?? 0) - (judge?.countOut ?? 0)))} ${judge?.state === "done" ? "anomalies" : "so far"}`,
+        state: judge?.state === "done" ? "done" : "pending",
         footer: "reasons kept",
       },
     },
@@ -100,15 +104,25 @@ export function Pipeline({ upload }: { upload: Upload }) {
     ["narrating", "incidents"],
     ["judging", "aside"],
   ];
-  const edges = pairs.map(([source, target]) => ({
-    id: `${source}-${target}`,
-    source,
-    target,
-    type: "smoothstep",
-    animated: source === "judging" && judge?.state === "running",
-    markerEnd: { type: MarkerType.ArrowClosed, color: "var(--color-accent)" },
-    style: { stroke: "var(--color-accent)", strokeWidth: 2 },
-  }));
+  const stateOf = (id: string) => nodes.find((n) => n.id === id)?.data.state;
+  const edges = pairs.map(([source, target]) => {
+    // The moving dashes lead into the stage at work. The side branch moves
+    // while judging runs, since that is when anomalies are set aside.
+    const moving =
+      stateOf(target) === "running" ||
+      (target === "aside" && stateOf(source) === "running");
+    const lit = moving || stateOf(source) === "done";
+    const color = lit ? "var(--color-accent)" : "var(--color-border)";
+    return {
+      id: `${source}-${target}`,
+      source,
+      target,
+      type: "smoothstep",
+      animated: moving,
+      markerEnd: { type: MarkerType.ArrowClosed, color },
+      style: { stroke: color, strokeWidth: 2 },
+    };
+  });
   return (
     <div className="pipeline-canvas" aria-label="Analysis pipeline">
       <ReactFlow

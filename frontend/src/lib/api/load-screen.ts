@@ -71,8 +71,12 @@ export async function loadScreen(
             params: {
               ...params,
               query: {
-                limit: 200,
-                q: typeof query.q === "string" ? query.q : undefined,
+                limit: 100,
+                // The API reads at most 200 characters of search.
+                q:
+                  typeof query.q === "string"
+                    ? query.q.slice(0, 200) || undefined
+                    : undefined,
               },
             },
           })

@@ -9,7 +9,23 @@ import { usePagedData } from "./use-paged-data";
 import type { Schema } from "@/lib/types";
 import { anomalyFixtures } from "@/lib/evaluation-fixtures";
 import { useWorkspace } from "./workspace";
-import { words, time } from "@/lib/format";
+import { number, words, time } from "@/lib/format";
+// evidenceQuery is the event search that shows what an anomaly rests on.
+// A few events are named one by one. More than that would pass the API's
+// 200-character limit on a search, so the link shows the destination or
+// the user the finding is about instead.
+function evidenceQuery(a: Schema["Anomaly"]) {
+  const byId = a.eventIds.map((id) => `id:${id}`).join(" OR ");
+  const query =
+    byId.length <= 200
+      ? byId
+      : a.host
+        ? `domain:${a.host}`
+        : a.user
+          ? `user:${a.user}`
+          : byId.slice(0, byId.lastIndexOf(" OR ", 200));
+  return encodeURIComponent(query);
+}
 export function Anomalies() {
   const { zone, selectedUploadId, live, demo } = useWorkspace();
   const query = useSearchParams();
@@ -47,7 +63,13 @@ export function Anomalies() {
     <>
       <Link href={`/triage?upload=${upload}`}>← Triage</Link>
       <h1 className="section">What was set aside, and why.</h1>
-      <p>Measured risk, model assessments, and disposition remain separate.</p>
+      <p>
+        Every finding the detectors made in this upload, including the ones that
+        never became an incident. Each row says what was measured, how it
+        scored, and what happened to it: raised in an incident, scored under the
+        threshold, judged benign by the AI, or set aside by a lesson you taught.
+        Use it to check that nothing was dropped for a bad reason.
+      </p>
       <label className="anomaly-filter">
         Show{" "}
         <select value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -100,11 +122,21 @@ export function Anomalies() {
                   </td>
                   <td>
                     <Link
-                      className="mono"
-                      href={`/events?upload=${upload}&q=${encodeURIComponent(a.eventIds.map((id) => `id:${id}`).join(" OR "))}`}
+                      href={`/events?upload=${upload}&q=${evidenceQuery(a)}`}
                     >
-                      {a.eventIds.join(", ")}
+                      {number(a.eventIds.length)}{" "}
+                      {a.eventIds.length === 1 ? "event" : "events"}
                     </Link>
+                    {a.incidentId && (
+                      <>
+                        {" · "}
+                        <Link
+                          href={`/incidents/${a.incidentId}?upload=${upload}`}
+                        >
+                          incident
+                        </Link>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -31,6 +31,13 @@ function Entity({ data }: NodeProps<EntityNode>) {
   );
 }
 const nodeTypes = { entity: Entity };
+// The API lays nodes out on a tight grid: 260 apart for a node 210 wide,
+// which leaves no room for an edge's label. Spread the grid out here.
+const spreadX = 1.45;
+const spreadY = 1.4;
+// Fit every node into view, but stop shrinking where labels stop being
+// readable. A very large graph opens at this zoom and pans.
+const smallestFit = 0.4;
 export function ActivityGraph({
   graph,
   selected,
@@ -47,7 +54,10 @@ export function ActivityGraph({
   const nodes: EntityNode[] = visible.map((n, i) => ({
     id: n.id,
     type: "entity",
-    position: { x: n.x ?? i * 280, y: n.y ?? 100 },
+    position: {
+      x: (n.x ?? i * 260) * spreadX,
+      y: (n.y ?? 0) * spreadY,
+    },
     data: {
       label: n.label,
       sublabel: n.sublabel,
@@ -91,7 +101,7 @@ export function ActivityGraph({
         <strong>Activity graph · observed</strong>
         <span>
           Click a node to select its evidence. Double-click to add its
-          neighbours.
+          neighbors.
         </span>
         <button
           className="small-button"
@@ -99,7 +109,7 @@ export function ActivityGraph({
             setExpanded(graph.nodes.filter((n) => n.neighbour).map((n) => n.id))
           }
         >
-          Expand all neighbours
+          Expand all neighbors
         </button>
       </div>
       <div className="activity-canvas">
@@ -112,7 +122,7 @@ export function ActivityGraph({
           edges={edges}
           nodeTypes={nodeTypes}
           fitView
-          fitViewOptions={{ padding: 0.15 }}
+          fitViewOptions={{ padding: 0.12, minZoom: smallestFit }}
           minZoom={0.2}
           maxZoom={2}
           nodesDraggable={false}

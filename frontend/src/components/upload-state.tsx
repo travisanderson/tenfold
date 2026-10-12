@@ -1,6 +1,6 @@
 "use client";
 import { NavigationLink as Link } from "./navigation-link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Upload } from "@/lib/types";
 import { completedUpload, processingUpload } from "@/lib/fixtures";
 import { number, words } from "@/lib/format";
@@ -10,6 +10,8 @@ type StateProps = {
   upload: Upload;
   resume: (acceptParseErrors?: boolean) => void;
   cancel: () => void;
+  /** Called before a choice runs. The dialog uses it to close itself. */
+  chosen?: () => void;
 };
 export function ProgressStrip({ upload }: { upload: Upload }) {
   return (
@@ -87,11 +89,11 @@ function EmptyResults({ upload }: StateProps) {
     </>
   );
 }
-function Malformed({ upload, resume, cancel }: StateProps) {
+function Malformed({ upload, resume, cancel, chosen }: StateProps) {
   return (
     <>
       <span className="eyebrow pill">Malformed log</span>
-      <h2>
+      <h2 id="malformed-title">
         {number(upload.parseErrorCount)} of {number(upload.lineCount)} lines
         could not be read
       </h2>
@@ -107,12 +109,65 @@ function Malformed({ upload, resume, cancel }: StateProps) {
         as partial.
       </p>
       <div className="actions">
-        <button className="primary" onClick={() => resume(true)}>
-          Analyse the good lines
+        <button
+          className="primary"
+          onClick={() => {
+            chosen?.();
+            resume(true);
+          }}
+        >
+          Analyze the good lines
         </button>
-        <button onClick={cancel}>Cancel this upload</button>
+        <button
+          onClick={() => {
+            chosen?.();
+            cancel();
+          }}
+        >
+          Cancel this upload
+        </button>
       </div>
     </>
+  );
+}
+// MalformedDialog asks the same question in a modal: the analysis cannot go
+// on until the analyst chooses. Either choice closes it and runs. Escape
+// puts the question off and leaves a card to come back to.
+function MalformedDialog(props: StateProps) {
+  const [open, setOpen] = useState(true);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, [open]);
+  if (!open)
+    return (
+      <section className="panel state-card partial">
+        <span className="eyebrow pill">Malformed log</span>
+        <h2>Analysis is paused</h2>
+        <p>
+          {number(props.upload.parseErrorCount)} lines could not be read. Choose
+          what to do with the rest.
+        </p>
+        <button className="primary" onClick={() => setOpen(true)}>
+          Review and choose
+        </button>
+      </section>
+    );
+  return (
+    <dialog
+      ref={dialog}
+      className="teach-dialog state-dialog"
+      aria-labelledby="malformed-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        setOpen(false);
+      }}
+    >
+      <Malformed {...props} chosen={() => setOpen(false)} />
+    </dialog>
   );
 }
 function Partial({ upload, resume }: StateProps) {
@@ -177,8 +232,14 @@ function Failed({ upload }: StateProps) {
     </>
   );
 }
-export function UploadState(props: StateProps) {
+export function UploadState(props: StateProps & { modal?: boolean }) {
   const { upload } = props;
+  if (
+    props.modal &&
+    upload.status === "partial" &&
+    upload.stop?.reason === "parse_errors"
+  )
+    return <MalformedDialog {...props} />;
   const Component =
     upload.status === "failed"
       ? Failed
@@ -292,7 +353,7 @@ export function OperationalStates() {
             }}
             cancel={() => {
               setStates((items) => items.filter((_, n) => n !== index));
-              setMessage("Sample upload cancelled.");
+              setMessage("Sample upload canceled.");
             }}
           />
         ))}
