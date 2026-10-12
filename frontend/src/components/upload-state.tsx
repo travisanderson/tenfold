@@ -1,0 +1,311 @@
+"use client";
+import { NavigationLink as Link } from "./navigation-link";
+import { useState } from "react";
+import type { Upload } from "@/lib/types";
+import { completedUpload, processingUpload } from "@/lib/fixtures";
+import { number, words } from "@/lib/format";
+import { CopyButton } from "./evidence";
+import { useWorkspace } from "./workspace";
+type StateProps = {
+  upload: Upload;
+  resume: (acceptParseErrors?: boolean) => void;
+  cancel: () => void;
+};
+export function ProgressStrip({ upload }: { upload: Upload }) {
+  return (
+    <div
+      className="progress-strip"
+      aria-label={`Analysis progress: ${upload.progress}%`}
+    >
+      {["parsing", "detecting", "judging", "narrating"].map((stage) => {
+        const s = upload.pipeline.find((p) => p.stage === stage);
+        return (
+          <span
+            key={stage}
+            className={s?.state ?? "pending"}
+            title={`${words(stage)}: ${s?.state ?? "pending"}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+function Processing({ upload }: StateProps) {
+  const stage = upload.pipeline.find((s) => s.state === "running");
+  return (
+    <>
+      <span className="eyebrow pill">Processing</span>
+      <h2>
+        {words(upload.stage)}
+        {stage?.countIn !== undefined
+          ? ` ${number(stage.processed ?? 0)} of ${number(stage.countIn)}`
+          : ""}
+      </h2>
+      <ProgressStrip upload={upload} />
+      <p>
+        The full pipeline view is on Uploads. This strip follows the file as it
+        runs.
+      </p>
+    </>
+  );
+}
+function Completed({ upload }: StateProps) {
+  return (
+    <>
+      <span className="eyebrow pill">Completed</span>
+      <h2>Analysis complete · {number(upload.incidentCount)} incidents</h2>
+      <p className="mono">
+        {number(upload.lineCount)} lines → {number(upload.anomalyCount)}{" "}
+        anomalies → {number(upload.incidentCount)} incidents
+      </p>
+      <p>
+        All stages finished. Open triage to review the risk scores and cited
+        evidence.
+      </p>
+      <Link className="button primary" href={`/triage?upload=${upload.id}`}>
+        Open triage
+      </Link>
+    </>
+  );
+}
+function EmptyResults({ upload }: StateProps) {
+  return (
+    <>
+      <span className="eyebrow pill">Empty results</span>
+      <h2>
+        <span className="empty-zero">0</span> moments crossed the anomaly
+        threshold.
+      </h2>
+      <p>
+        Tenfold read {number(upload.lineCount)} lines and found{" "}
+        {number(upload.anomalyCount)} anomalies. No incident was raised. That is
+        a result, not an error.
+      </p>
+      <Link href={`/anomalies?upload=${upload.id}`}>
+        See the anomalies and their scores
+      </Link>
+    </>
+  );
+}
+function Malformed({ upload, resume, cancel }: StateProps) {
+  return (
+    <>
+      <span className="eyebrow pill">Malformed log</span>
+      <h2>
+        {number(upload.parseErrorCount)} of {number(upload.lineCount)} lines
+        could not be read
+      </h2>
+      {upload.firstParseError && (
+        <pre className="state-raw">
+          line {upload.firstParseError.lineNo} · {upload.firstParseError.reason}
+          {"\n"}
+          {upload.firstParseError.sample}
+        </pre>
+      )}
+      <p>
+        The other lines can still be analyzed. Results from them will be marked
+        as partial.
+      </p>
+      <div className="actions">
+        <button className="primary" onClick={() => resume(true)}>
+          Analyse the good lines
+        </button>
+        <button onClick={cancel}>Cancel this upload</button>
+      </div>
+    </>
+  );
+}
+function Partial({ upload, resume }: StateProps) {
+  return (
+    <>
+      <span className="eyebrow pill">Partial results</span>
+      <h2>{words(upload.stop?.stage ?? upload.stage)} stopped</h2>
+      <ProgressStrip upload={upload} />
+      <p>{upload.stop?.message}</p>
+      <div className="actions">
+        <button className="primary" onClick={() => resume()}>
+          Resume from {words(upload.stop?.stage ?? upload.stage)}
+        </button>
+        <Link className="button" href={`/triage?upload=${upload.id}`}>
+          Open what is ready
+        </Link>
+      </div>
+    </>
+  );
+}
+function AiUnavailable({ upload, resume }: StateProps) {
+  return (
+    <>
+      <span className="eyebrow pill">AI unavailable</span>
+      <h2>The AI model could not be reached</h2>
+      <div className="ai-panel">
+        <span className="eyebrow">AI interpretation</span>
+        <p>
+          Not available for this upload. Nothing has been written in its place.
+        </p>
+      </div>
+      <p>{upload.stop?.message}</p>
+      <button className="accent-button" onClick={() => resume()}>
+        Try the AI stages again
+      </button>
+    </>
+  );
+}
+function Failed({ upload }: StateProps) {
+  return (
+    <>
+      <span className="eyebrow pill">▲ Failed</span>
+      <h2>The upload did not finish</h2>
+      <p className="mono">{upload.filename}</p>
+      <p>
+        {upload.error?.message ??
+          "The job stopped before usable results were saved."}
+      </p>
+      <div className="actions">
+        <Link className="button primary" href="/uploads">
+          Upload again
+        </Link>
+        <CopyButton
+          label="Copy error details"
+          text={JSON.stringify(
+            upload.error ?? { message: "Upload failed" },
+            null,
+            2,
+          )}
+        />
+      </div>
+    </>
+  );
+}
+export function UploadState(props: StateProps) {
+  const { upload } = props;
+  const Component =
+    upload.status === "failed"
+      ? Failed
+      : upload.status === "partial"
+        ? upload.stop?.reason === "parse_errors"
+          ? Malformed
+          : upload.stop?.reason === "ai_unavailable"
+            ? AiUnavailable
+            : Partial
+        : upload.status === "completed"
+          ? upload.incidentCount === 0
+            ? EmptyResults
+            : Completed
+          : Processing;
+  return (
+    <section className={`panel state-card ${upload.status}`}>
+      <Component {...props} />
+    </section>
+  );
+}
+const examples: Upload[] = [
+  processingUpload,
+  completedUpload,
+  {
+    ...completedUpload,
+    id: "9c9e6679-7425-40de-944b-e07fc1f90ae7",
+    incidentCount: 0,
+  },
+  {
+    ...processingUpload,
+    id: "11111111-1111-4111-8111-111111111111",
+    status: "partial",
+    stage: "parsing",
+    parseErrorCount: 412,
+    firstParseError: {
+      lineNo: 1203,
+      reason: "expected 21 fields, found 9",
+      sample: "time=2026-10-09T06:02:11Z\tlogin=tom.h@northwindlabs.example",
+    },
+    stop: {
+      stage: "parsing",
+      reason: "parse_errors",
+      message: "Some lines could not be read.",
+    },
+  },
+  {
+    ...processingUpload,
+    id: "22222222-2222-4222-8222-222222222222",
+    status: "partial",
+    stop: {
+      stage: "judging",
+      reason: "stage_failed",
+      message:
+        "Judging stopped at 132 of 198. Risk scores and evidence are complete; the remaining anomalies have no AI assessment yet.",
+    },
+  },
+  {
+    ...processingUpload,
+    id: "33333333-3333-4333-8333-333333333333",
+    status: "partial",
+    stop: {
+      stage: "judging",
+      reason: "ai_unavailable",
+      message:
+        "Risk scores, signals, and evidence do not depend on the model and are complete. You can triage from them now.",
+    },
+  },
+  {
+    ...processingUpload,
+    id: "44444444-4444-4444-8444-444444444444",
+    status: "failed",
+    error: {
+      code: "upload_failed",
+      message:
+        "The file transfer stopped. No usable results were saved. Earlier uploads are untouched.",
+    },
+  },
+];
+export function OperationalStates() {
+  const [states, setStates] = useState(examples);
+  const { setUploads } = useWorkspace();
+  const [message, setMessage] = useState("");
+  return (
+    <>
+      <span className="eyebrow">Operational states · sample scenarios</span>
+      <h1 className="section">What an upload can turn into.</h1>
+      {message && (
+        <p className="status-message" role="status">
+          {message}
+        </p>
+      )}
+      <div className="states-grid">
+        {states.map((u, index) => (
+          <UploadState
+            key={index}
+            upload={u}
+            resume={() => {
+              const resumed = {
+                ...u,
+                status: "processing" as const,
+                stop: undefined,
+              };
+              setStates((items) =>
+                items.map((v, n) => (n === index ? resumed : v)),
+              );
+              setUploads((items) => [
+                resumed,
+                ...items.filter((v) => v.id !== u.id),
+              ]);
+              setMessage("Analysis resumed in this preview.");
+            }}
+            cancel={() => {
+              setStates((items) => items.filter((_, n) => n !== index));
+              setMessage("Sample upload cancelled.");
+            }}
+          />
+        ))}
+      </div>
+      <button
+        className="section"
+        onClick={() => {
+          setStates(examples);
+          setMessage("");
+        }}
+      >
+        Reset sample scenarios
+      </button>
+    </>
+  );
+}

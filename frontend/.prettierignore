@@ -1,0 +1,5 @@
+src/lib/api/schema.d.ts
+next-env.d.ts
+.next
+node_modules
+test-results

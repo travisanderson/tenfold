@@ -1,0 +1,46 @@
+{
+  "name": "tenfold-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "mock:api": "prism mock ../api/openapi.yaml --host 127.0.0.1 --port 4010",
+    "mock:check": "node scripts/check-mock.mjs",
+    "format": "prettier --write src tests scripts *.ts *.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.2.0",
+    "@fontsource-variable/spline-sans-mono": "^5.2.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.0.0",
+    "@tanstack/react-table": "^8.21.0",
+    "@tanstack/react-virtual": "^3.13.0",
+    "@xyflow/react": "^12.9.0",
+    "chart.js": "^4.5.0",
+    "chartjs-plugin-annotation": "^3.1.0",
+    "next": "^16.0.0",
+    "openapi-fetch": "^0.15.0",
+    "react": "^19.2.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^19.2.0",
+    "react-dropzone": "^14.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@stoplight/prism-cli": "^5.16.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

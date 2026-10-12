@@ -1,0 +1,183 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import type { Incident, Schema } from "@/lib/types";
+import { previewLesson } from "@/lib/api/actions";
+import { unwrap } from "@/lib/api/result";
+import { useWorkspace } from "./workspace";
+import { number, safeError } from "@/lib/format";
+export function TeachDialog({
+  incident,
+  close,
+  save,
+}: {
+  incident: Incident;
+  close: () => void;
+  save: (lesson?: Schema["LessonCreate"]) => Promise<void>;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [text, setText] = useState("");
+  const [scopeIndex, setScopeIndex] = useState(0);
+  const [expiry, setExpiry] = useState(() =>
+    new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const suggestion = incident.lessonSuggestions[scopeIndex];
+  const { demo } = useWorkspace();
+  const [livePreview, setLivePreview] = useState<{
+    scope: string;
+    data: Schema["LessonPreviewResponse"];
+  }>();
+  const scopeKey = JSON.stringify(suggestion?.scope);
+  const preview = demo
+    ? {
+        wouldSuppressAnomalies: suggestion?.scope.type === "user" ? 12 : 37,
+        wouldResolveIncidents: 1,
+      }
+    : livePreview?.scope === scopeKey
+      ? livePreview.data
+      : undefined;
+  useEffect(() => {
+    if (demo || !suggestion) return;
+    let disposed = false;
+    previewLesson(incident.uploadId, suggestion.scope)
+      .then((result) => {
+        const data = unwrap(result);
+        if (!disposed) setLivePreview({ scope: scopeKey, data });
+      })
+      .catch((e) => {
+        if (!disposed) setError(safeError(e));
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [demo, incident.uploadId, suggestion, scopeKey]);
+  useEffect(() => {
+    const element = dialog.current;
+    const prior = document.activeElement as HTMLElement | null;
+    element?.showModal();
+    return () => {
+      element?.close();
+      prior?.focus();
+    };
+  }, []);
+  async function submit(teach: boolean) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await save(
+        teach && suggestion
+          ? {
+              text: text.trim(),
+              scope: suggestion.scope,
+              expiresAt: `${expiry}T23:59:59Z`,
+            }
+          : undefined,
+      );
+      close();
+    } catch (e) {
+      setError(safeError(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <dialog
+      ref={dialog}
+      className="teach-dialog"
+      aria-labelledby="teach-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        if (!busy) close();
+      }}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit(true);
+        }}
+      >
+        <span className="eyebrow">Teach it once</span>
+        <h2 id="teach-title">Dismiss as false positive</h2>
+        <p>
+          Say why this is harmless, in your own words. Tenfold will set aside
+          matching anomalies in future uploads, and show you each time it does.
+        </p>
+        <label htmlFor="lesson-text">The lesson</label>
+        <textarea
+          autoFocus
+          id="lesson-text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          required
+          maxLength={1000}
+          rows={3}
+          placeholder="Explain why this activity is expected."
+        />
+        <fieldset>
+          <legend>Applies to</legend>
+          {incident.lessonSuggestions.map((s, i) => (
+            <label
+              className={`scope-option ${scopeIndex === i ? "chosen" : ""}`}
+              key={s.scope.type + s.scope.value}
+            >
+              <input
+                type="radio"
+                name="scope"
+                checked={scopeIndex === i}
+                onChange={() => setScopeIndex(i)}
+              />
+              <span>{s.label}</span>
+            </label>
+          ))}
+        </fieldset>
+        <label htmlFor="lesson-expiry">Expires</label>
+        <input
+          id="lesson-expiry"
+          type="date"
+          value={expiry}
+          min={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => setExpiry(e.target.value)}
+          required
+        />
+        <small>Lessons end after 90 days unless you renew them.</small>
+        {suggestion && (
+          <div className="lesson-preview">
+            <strong className="mono">
+              {preview ? number(preview.wouldSuppressAnomalies) : "…"}
+            </strong>
+            <span>
+              anomalies in this upload would have been set aside by this lesson.
+            </span>
+          </div>
+        )}
+        {error && (
+          <p role="alert" className="notice">
+            {error}
+          </p>
+        )}
+        <div className="dialog-actions">
+          <button type="button" disabled={busy} onClick={close}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void submit(false)}
+          >
+            Dismiss without teaching
+          </button>
+          <button
+            className="primary"
+            disabled={
+              busy || !text.trim() || !suggestion || !expiry || !preview
+            }
+          >
+            {busy ? "Saving…" : "Dismiss and teach"}
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}

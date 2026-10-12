@@ -1,0 +1,2 @@
+time=2026-10-08T06:17:22Z	recordid=646	login=dana.k@northwindlabs.example	dept=Finance	cip=10.20.99.47	sip=192.0.2.36	host=files-sync-cdn.net	url=https://files-sync-cdn.net/	urlcat=Miscellaneous or Unknown	action=Allowed	reason=Allowed	reqmethod=GET	respcode=200	reqsize=410	respsize=1228	ua=curl/8.4.0	appname=General Browsing	appclass=General Browsing	devicehostname=LT-022	threatname=None	riskscore=61
+malformed line for upload validation
