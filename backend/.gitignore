@@ -1,3 +1,7 @@
 # Secrets and local data. Never commit these.
 .env
 .data/
+
+# The repo root ignores every folder named samples/ (the generated demo logs).
+# This Go package shares the name and must be tracked.
+!internal/samples/
