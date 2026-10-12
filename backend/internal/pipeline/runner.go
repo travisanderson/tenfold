@@ -40,6 +40,11 @@ var stageOrder = []api.PipelineStage{
 	api.PipelineStageNarrating,
 }
 
+// maxRunningJobs caps how many jobs work at once. A job holds its upload's
+// events in memory while it detects and groups, and keeps a few database
+// connections and model requests busy. A job past the cap waits its turn.
+const maxRunningJobs = 2
+
 // progressRange is the slice of the progress bar each stage fills.
 var progressRange = map[api.PipelineStage][2]int{
 	api.PipelineStageParsing:   {0, 45},
@@ -60,16 +65,18 @@ type Runner struct {
 	ai      AI
 	log     *slog.Logger
 
-	mu   sync.Mutex
-	jobs map[uuid.UUID]context.CancelFunc
-	wg   sync.WaitGroup
+	mu    sync.Mutex
+	jobs  map[uuid.UUID]context.CancelFunc
+	wg    sync.WaitGroup
+	slots chan struct{} // one token per job at work
 }
 
 // NewRunner wires a runner to its dependencies.
 func NewRunner(st *store.Store, blobs blob.Store, catalog samples.Catalog, hub *Hub, ai AI, log *slog.Logger) *Runner {
 	return &Runner{
 		store: st, blobs: blobs, samples: catalog, hub: hub, ai: ai, log: log,
-		jobs: map[uuid.UUID]context.CancelFunc{},
+		jobs:  map[uuid.UUID]context.CancelFunc{},
+		slots: make(chan struct{}, maxRunningJobs),
 	}
 }
 
@@ -129,9 +136,31 @@ func (r *Runner) Analyze(ctx context.Context, userID, uploadID uuid.UUID, opts O
 			r.mu.Unlock()
 			cancel()
 		}()
+		if !r.takeSlot(jobCtx, j) {
+			return // deleted while it waited
+		}
+		defer func() { <-r.slots }()
 		j.run(jobCtx, from)
 	}()
 	return queued, nil
+}
+
+// takeSlot waits until fewer than maxRunningJobs jobs are at work. It
+// reports false if the job was cancelled first.
+func (r *Runner) takeSlot(ctx context.Context, j *job) bool {
+	select {
+	case r.slots <- struct{}{}:
+		return true
+	default:
+	}
+	j.u.Message = "Waiting for another analysis to finish"
+	j.save(ctx)
+	select {
+	case r.slots <- struct{}{}:
+		return true
+	case <-ctx.Done():
+		return false
+	}
 }
 
 // startStage decides where a new job begins.

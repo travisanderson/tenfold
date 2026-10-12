@@ -287,6 +287,70 @@ func TestSecondAnalyzeIsRefusedWhileOneRuns(t *testing.T) {
 	r.Wait()
 }
 
+// gatedBlobs is storage whose files open only when the test says so. It
+// holds a job at the start of parsing, which is the first thing a job does
+// once it has a slot.
+type gatedBlobs struct {
+	memoryBlobs
+	opened  chan struct{} // one value per Open call
+	release chan struct{} // closed to let every Open return
+}
+
+func (g gatedBlobs) Open(ctx context.Context, key string) (io.ReadCloser, error) {
+	g.opened <- struct{}{}
+	<-g.release
+	return g.memoryBlobs.Open(ctx, key)
+}
+
+func TestJobsPastTheCapWaitTheirTurn(t *testing.T) {
+	st := storetest.New(t)
+	user := uuid.New()
+	blobs := gatedBlobs{memoryBlobs{}, make(chan struct{}, maxRunningJobs+1), make(chan struct{})}
+	r := newRunner(t, st, blobs, NewAI("mock"))
+
+	uploads := make([]model.Upload, maxRunningJobs+1)
+	for i := range uploads {
+		uploads[i] = fileUpload(t, st, blobs.memoryBlobs, user, "not a proxy log\n")
+		if _, err := r.Analyze(ctx, user, uploads[i].ID, Options{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// The cap's worth of jobs reach storage. The one past it does not.
+	for range maxRunningJobs {
+		select {
+		case <-blobs.opened:
+		case <-time.After(30 * time.Second):
+			t.Fatal("a job within the cap never started")
+		}
+	}
+	select {
+	case <-blobs.opened:
+		t.Fatalf("more than %d jobs are at work", maxRunningJobs)
+	case <-time.After(2 * time.Second):
+	}
+	last, err := st.GetUpload(ctx, user, uploads[maxRunningJobs].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if last.Status != "processing" || !strings.HasPrefix(last.Message, "Waiting") {
+		t.Fatalf("the waiting job: status %s, message %q", last.Status, last.Message)
+	}
+
+	// Once the others finish, it takes its turn and runs to its end.
+	close(blobs.release)
+	r.Wait()
+	for _, u := range uploads {
+		got, err := st.GetUpload(ctx, user, u.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Status != "failed" || got.Error == nil || got.Error.Code != "parse_failed" {
+			t.Errorf("upload %s: status %s, error %+v", u.ID, got.Status, got.Error)
+		}
+	}
+}
+
 func overlap(evidence, scenario []int) float64 {
 	in := map[int]bool{}
 	for _, n := range evidence {

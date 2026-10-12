@@ -108,6 +108,9 @@ stopped and can be resumed.
 - **Every narrative citation is checked** against the incident's evidence.
   A draft that cites anything else is replaced by a fixed template.
 - **GET never calls a model.** All AI work happens in the background job.
+- **Two jobs work at once.** A job holds its upload's events in memory, so
+  the rest wait their turn and say so in `message`. The cap is `maxRunningJobs`
+  in `internal/pipeline/runner.go`. It is per server, not per user.
 - **Raw log lines are customer data.** They are stored and returned, never
   logged.
 
