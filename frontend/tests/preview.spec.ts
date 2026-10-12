@@ -76,6 +76,20 @@ for(const width of [1440,390]){
  await expect(page.locator('body')).toHaveJSProperty('scrollWidth',width);
  await page.screenshot({path:`test-results/states-${width}.png`,fullPage:true});
  await page.getByRole('button',{name:'Try the AI stages again'}).click();
- await expect(page.getByRole('status')).toHaveText('Analysis resumed in this preview.');
+ await expect(page.getByRole('status').filter({hasText:'Analysis resumed in this preview.'})).toBeVisible();
+ });
+}
+
+for(const width of [1440,390]){
+ test(`teaching dialog at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.goto('/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b');
+ await page.getByRole('button',{name:'Dismiss as false positive',exact:true}).click();
+ await expect(page.getByRole('dialog')).toBeVisible();await expect(page.getByLabel('The lesson')).toBeFocused();
+ await page.getByLabel('The lesson').fill('Approved transfer confirmed with Dana.');
+ await page.getByLabel('This domain files-sync-cdn.net').check();
+ await page.screenshot({path:`test-results/teaching-${width}.png`,fullPage:true});
+ await page.getByRole('button',{name:'Dismiss and teach',exact:true}).click();
+ await expect(page.getByRole('dialog')).toHaveCount(0);
+ await expect(page.getByRole('status').filter({hasText:'Incident dismissed and lesson saved in this preview.'})).toBeVisible();
  });
 }
