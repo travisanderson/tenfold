@@ -22,6 +22,13 @@ const (
 	exfilMinRatio   = 10.0             // and it must be 10× the baseline hour
 	exfilMinHours   = 3                // hours of a user's own history a baseline needs
 
+	// A destination half the company uses is a common one, and a transfer to
+	// it must be larger to count. Everyone uploads to the shared drive; one
+	// 15 MB file there is a slide deck. The cost is named: under 50 MB to a
+	// common host is never flagged for its size alone.
+	exfilCommonShare    = 0.5
+	exfilCommonMinBytes = 50 << 20
+
 	beaconMinRequests = 30              // too few requests cannot show a rhythm
 	beaconTolerance   = 0.10            // an interval within 10% of the median is "on beat"
 	beaconMinOnBeat   = 0.80            // share of intervals that must be on beat
@@ -178,7 +185,7 @@ func exfilVolume(p *profile) []model.Anomaly {
 				for _, e := range transfer {
 					sent += float64(e.BytesOut)
 				}
-				if sent < exfilMinBytes {
+				if sent < exfilMinBytes || (p.common(host) && sent < exfilCommonMinBytes) {
 					continue
 				}
 

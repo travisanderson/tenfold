@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"tenfold/backend/internal/api"
 	"tenfold/backend/internal/model"
 	"tenfold/backend/internal/samples"
 	"tenfold/backend/internal/zscaler"
@@ -104,11 +103,8 @@ func TestAttackDayCatchesEveryPlantedAttack(t *testing.T) {
 }
 
 // A day with no attacks should raise the decoys, which are built to look
-// suspicious, and nothing else of medium severity or above.
-//
-// Known first-pass false positive: one honest 15 MB upload to a common
-// file-sharing site scores 34 (low). Session 5 tunes that away.
-func TestCleanDayRaisesNothingSeriousButTheDecoys(t *testing.T) {
+// suspicious, and nothing else at all.
+func TestCleanDayRaisesNothingButTheDecoys(t *testing.T) {
 	events, key := loadSample(t, "clean-day")
 	groups := GroupAnomalies(Run(uuid.New(), events))
 	for _, g := range groups {
@@ -122,7 +118,7 @@ func TestCleanDayRaisesNothingSeriousButTheDecoys(t *testing.T) {
 			}
 		}
 		t.Logf("raised  %3d %-8s %s %s decoy=%v", g.RiskScore, Severity(g.RiskScore), g.Anomalies[0].User, signalNames(g), explained)
-		if !explained && Severity(g.RiskScore) != api.SeverityLow {
+		if !explained {
 			t.Errorf("a group for %s scored %d on a day with no attacks and no matching decoy",
 				g.Anomalies[0].User, g.RiskScore)
 		}

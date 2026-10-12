@@ -27,6 +27,13 @@ type profile struct {
 	quiet [24]bool
 }
 
+// common reports whether a host is one much of the company uses. A file
+// with too few users cannot say.
+func (p *profile) common(host string) bool {
+	return len(p.users) >= rareMinUsers &&
+		float64(p.hostUsers[host]) >= exfilCommonShare*float64(len(p.users))
+}
+
 // quietShare defines the file's quiet hours: under a tenth of the peak hour.
 const quietShare = 0.10
 
