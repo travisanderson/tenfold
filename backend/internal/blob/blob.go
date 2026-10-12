@@ -35,17 +35,23 @@ const signedURLLifetime = 2 * time.Hour
 // Supabase stores files in one private Supabase Storage bucket.
 type Supabase struct {
 	baseURL string // https://<ref>.supabase.co/storage/v1
-	key     string // secret key; never leaves the server
-	bucket  string
-	client  *http.Client
+	// uploadURL is the same address as the browser reaches it. The two
+	// differ only when the server and the browser are on different
+	// networks, as in Docker.
+	uploadURL string
+	key       string // secret key; never leaves the server
+	bucket    string
+	client    *http.Client
 }
 
 // NewSupabase returns a store for one bucket of a Supabase project.
 func NewSupabase(projectURL, serviceKey, bucket string) *Supabase {
+	base := strings.TrimRight(projectURL, "/") + "/storage/v1"
 	return &Supabase{
-		baseURL: strings.TrimRight(projectURL, "/") + "/storage/v1",
-		key:     serviceKey,
-		bucket:  bucket,
+		baseURL:   base,
+		uploadURL: base,
+		key:       serviceKey,
+		bucket:    bucket,
 		// No overall timeout: Open streams files of up to 50 MB.
 		client: &http.Client{},
 	}
@@ -78,6 +84,14 @@ func (s *Supabase) EnsureBucket(ctx context.Context, maxFileBytes int64) error {
 	return nil
 }
 
+// ReachedFromBrowserAt sets the project URL the browser uses, for when it
+// is not the one the server uses. Signed upload URLs are built on it,
+// because the browser is who sends the file.
+func (s *Supabase) ReachedFromBrowserAt(projectURL string) *Supabase {
+	s.uploadURL = strings.TrimRight(projectURL, "/") + "/storage/v1"
+	return s
+}
+
 func (s *Supabase) SignedUploadURL(ctx context.Context, key string) (string, time.Time, error) {
 	resp, err := s.do(ctx, http.MethodPost, "/object/upload/sign/"+s.objectPath(key), map[string]any{})
 	if err != nil {
@@ -93,7 +107,7 @@ func (s *Supabase) SignedUploadURL(ctx context.Context, key string) (string, tim
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil || body.URL == "" {
 		return "", time.Time{}, fmt.Errorf("sign upload URL: unexpected response")
 	}
-	return s.baseURL + body.URL, time.Now().Add(signedURLLifetime).UTC(), nil
+	return s.uploadURL + body.URL, time.Now().Add(signedURLLifetime).UTC(), nil
 }
 
 func (s *Supabase) Open(ctx context.Context, key string) (io.ReadCloser, error) {

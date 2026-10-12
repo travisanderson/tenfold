@@ -59,7 +59,8 @@ func run(log *slog.Logger) error {
 		return err
 	}
 
-	blobs := blob.NewSupabase(cfg.SupabaseURL, cfg.SupabaseServiceKey, cfg.StorageBucket)
+	blobs := blob.NewSupabase(cfg.SupabaseURL, cfg.SupabaseServiceKey, cfg.StorageBucket).
+		ReachedFromBrowserAt(cfg.SupabasePublicURL)
 	if err := blobs.EnsureBucket(startup, server.MaxUploadBytes); err != nil {
 		return err
 	}

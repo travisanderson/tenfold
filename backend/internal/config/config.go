@@ -19,7 +19,11 @@ type Config struct {
 	// Supabase: the database host, the auth provider and the file store.
 	SupabaseURL        string
 	SupabaseServiceKey string
-	StorageBucket      string
+	// SupabasePublicURL is the project URL as the browser reaches it. It
+	// is SupabaseURL unless set. The two differ when the server runs in
+	// Docker and the browser does not.
+	SupabasePublicURL string
+	StorageBucket     string
 
 	// JWKSURL is where Supabase publishes its token signing keys. JWTSecret
 	// is only for older projects that sign with a shared secret.
@@ -64,6 +68,7 @@ func Load() (Config, error) {
 		DatabaseURL:          os.Getenv("DATABASE_URL"),
 		SupabaseURL:          strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"),
 		SupabaseServiceKey:   os.Getenv("SUPABASE_SERVICE_KEY"),
+		SupabasePublicURL:    strings.TrimRight(os.Getenv("SUPABASE_PUBLIC_URL"), "/"),
 		StorageBucket:        env("STORAGE_BUCKET", "logs"),
 		JWKSURL:              os.Getenv("SUPABASE_JWKS_URL"),
 		JWTSecret:            os.Getenv("SUPABASE_JWT_SECRET"),
@@ -88,6 +93,9 @@ func Load() (Config, error) {
 		if value == "" {
 			problems = append(problems, name+" is required")
 		}
+	}
+	if c.SupabasePublicURL == "" {
+		c.SupabasePublicURL = c.SupabaseURL
 	}
 	if c.JWKSURL == "" && c.JWTSecret == "" && c.SupabaseURL != "" {
 		c.JWKSURL = c.SupabaseURL + "/auth/v1/.well-known/jwks.json"
