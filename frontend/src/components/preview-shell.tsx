@@ -1,4 +1,10 @@
 "use client";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Shell } from "./shell";
-export function PreviewShell() { const [zone,setZone] = useState("America/New_York"); return <Shell demo zone={zone} setZone={setZone}><h1>Find the signal.</h1><p>Your investigation starts with a day of Zscaler logs.</p></Shell>; }
+import { useWorkspace } from "./workspace";
+import { Uploads } from "./uploads";
+import { incidentId } from "@/lib/fixtures";
+export function PreviewShell() {
+ const state = useWorkspace(); const pathname = usePathname();
+ return <Shell {...state} uploadId={state.selectedUploadId} incidentId={incidentId}>{pathname === "/uploads" ? <Uploads /> : <div className="panel"><h1>Your investigation workspace</h1><p>The remaining screens are being built.</p></div>}</Shell>;
+}
