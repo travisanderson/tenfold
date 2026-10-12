@@ -9,8 +9,7 @@
 # The reported run also rewrites backend/eval/holdout-sweep.txt. If git then
 # shows that file as changed, the results have changed.
 #
-# It needs the generator in samples/loggen, which is kept out of version
-# control, and about 25 MB of temporary disk per seed.
+# It needs Go, and about 25 MB of temporary disk per seed.
 set -eu
 
 first=${1:-101}

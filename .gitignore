@@ -2,6 +2,10 @@
 node_modules/
 agents
 agents/
-samples/
+# The generated demo logs and their answer keys: about 90 MB, rebuilt from a
+# seed. The generator in samples/loggen is tracked.
+/samples/*.log
+/samples/*.answers.json
+/samples/holdout/
 # Local overrides for docker compose. .env.example is the tracked copy.
 .env

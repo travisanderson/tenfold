@@ -159,8 +159,7 @@ make holdout-sweep            # from the repo root; about 20 seconds
 
 It generates the 50 days, scores them, and rewrites `eval/holdout-sweep.txt`.
 The same code gives the same bytes, so `git diff` shows whether anything
-moved. `scripts/holdout-sweep.sh 201 260` scores another range. Both need
-the generator in `samples/loggen`, which is kept out of version control.
+moved. `scripts/holdout-sweep.sh 201 260` scores another range.
 
 ## Deploy
 

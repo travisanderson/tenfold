@@ -23,8 +23,8 @@ import (
 // threshold mirrors the server's default RISK_THRESHOLD.
 const threshold = 30
 
-// The samples folder is not in version control. These tests run when it
-// has been generated (`make samples`) and are skipped when it has not.
+// The sample logs are not in version control. These tests run when they
+// have been generated (`make samples`) and are skipped when they have not.
 // SAMPLES_DIR points them at another set, such as one from a different seed.
 var samplesDir = cmp.Or(os.Getenv("SAMPLES_DIR"), "../../../samples")
 

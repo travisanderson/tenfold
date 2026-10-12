@@ -22,7 +22,7 @@ generate-ts:
 	npm run -s generate:ts
 
 # Writes the demo logs and their answer keys. Same seed, same bytes.
-# The samples folder, generator included, is kept out of version control.
+# The logs are kept out of version control; the generator is tracked.
 samples:
 	cd samples && $(GO) run ./loggen --all --seed 42
 
