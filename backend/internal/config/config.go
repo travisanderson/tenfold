@@ -1,0 +1,114 @@
+// Package config reads the server's settings from the environment.
+package config
+
+import (
+	"bufio"
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+// Config holds every setting the server needs. See .env.example.
+type Config struct {
+	Port        string
+	DatabaseURL string
+
+	// Supabase: the database host, the auth provider and the file store.
+	SupabaseURL        string
+	SupabaseServiceKey string
+	StorageBucket      string
+
+	// JWKSURL is where Supabase publishes its token signing keys. JWTSecret
+	// is only for older projects that sign with a shared secret.
+	JWKSURL   string
+	JWTSecret string
+
+	SamplesDir string
+
+	// AIProvider picks the decision and narrative provider: "mock" or "none".
+	AIProvider    string
+	RiskThreshold int
+}
+
+// Load reads the environment and reports every problem at once.
+func Load() (Config, error) {
+	c := Config{
+		Port:               env("PORT", "8080"),
+		DatabaseURL:        os.Getenv("DATABASE_URL"),
+		SupabaseURL:        strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"),
+		SupabaseServiceKey: os.Getenv("SUPABASE_SERVICE_KEY"),
+		StorageBucket:      env("STORAGE_BUCKET", "logs"),
+		JWKSURL:            os.Getenv("SUPABASE_JWKS_URL"),
+		JWTSecret:          os.Getenv("SUPABASE_JWT_SECRET"),
+		SamplesDir:         env("SAMPLES_DIR", "../samples"),
+		AIProvider:         env("AI_PROVIDER", "mock"),
+	}
+
+	var problems []string
+	for name, value := range map[string]string{
+		"DATABASE_URL":         c.DatabaseURL,
+		"SUPABASE_URL":         c.SupabaseURL,
+		"SUPABASE_SERVICE_KEY": c.SupabaseServiceKey,
+	} {
+		if value == "" {
+			problems = append(problems, name+" is required")
+		}
+	}
+	if c.JWKSURL == "" && c.JWTSecret == "" && c.SupabaseURL != "" {
+		c.JWKSURL = c.SupabaseURL + "/auth/v1/.well-known/jwks.json"
+	}
+	if c.AIProvider != "mock" && c.AIProvider != "none" {
+		problems = append(problems, fmt.Sprintf("AI_PROVIDER %q is not mock or none", c.AIProvider))
+	}
+	threshold, err := strconv.Atoi(env("RISK_THRESHOLD", "30"))
+	if err != nil || threshold < 0 || threshold > 100 {
+		problems = append(problems, "RISK_THRESHOLD must be an integer from 0 to 100")
+	}
+	c.RiskThreshold = threshold
+
+	if len(problems) > 0 {
+		return Config{}, errors.New(strings.Join(problems, "; "))
+	}
+	return c, nil
+}
+
+// LoadDotEnv sets variables from a KEY=VALUE file, if the file exists.
+// Variables already set in the environment win, so a deploy's real settings
+// are never overridden by a stray file.
+func LoadDotEnv(path string) error {
+	f, err := os.Open(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		value = strings.Trim(strings.TrimSpace(value), `"'`)
+		if _, set := os.LookupEnv(key); !set {
+			os.Setenv(key, value)
+		}
+	}
+	return scanner.Err()
+}
+
+func env(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}

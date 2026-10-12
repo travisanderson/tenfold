@@ -1,0 +1,3 @@
+# Secrets and local data. Never commit these.
+.env
+.data/
