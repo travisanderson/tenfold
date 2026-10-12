@@ -49,7 +49,7 @@ func run(log *slog.Logger) error {
 	startup, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	st, err := store.Open(startup, cfg.DatabaseURL)
+	st, err := store.Open(startup, cfg.DatabaseURL, cfg.DBMaxConns)
 	if err != nil {
 		return err
 	}
@@ -70,9 +70,15 @@ func run(log *slog.Logger) error {
 		return err
 	}
 
-	catalog := samples.NewCatalog(cfg.SamplesDir)
-	if found, _ := catalog.List(); len(found) == 0 {
-		log.Warn("no demo samples found; 'Load demo data' will be empty", "dir", cfg.SamplesDir)
+	// Demo logs come from their own private bucket, or from a folder when
+	// SAMPLES_DIR is set.
+	var sampleFiles samples.Files = blob.NewSupabase(cfg.SupabaseURL, cfg.SupabaseServiceKey, cfg.SamplesBucket)
+	if cfg.SamplesDir != "" {
+		sampleFiles = samples.Dir(cfg.SamplesDir)
+	}
+	catalog := samples.NewCatalog(sampleFiles)
+	if found, err := catalog.List(startup); err != nil || len(found) == 0 {
+		log.Warn("no demo samples found; 'Load demo data' will be empty. Run `go run ./cmd/uploadsamples`.")
 	}
 
 	hub := pipeline.NewHub()

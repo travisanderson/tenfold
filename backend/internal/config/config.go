@@ -25,7 +25,15 @@ type Config struct {
 	JWKSURL   string
 	JWTSecret string
 
-	SamplesDir string
+	// The demo logs live in SamplesBucket. SamplesDir, when set, reads
+	// them from a folder on disk instead, for working offline.
+	SamplesBucket string
+	SamplesDir    string
+
+	// DBMaxConns caps the connection pool. Supabase's session pooler
+	// allows a small, fixed number of connections per database, so the
+	// pool must stay well under it.
+	DBMaxConns int
 
 	// AIProvider picks the decision and narrative provider: "mock" or "none".
 	AIProvider    string
@@ -42,7 +50,8 @@ func Load() (Config, error) {
 		StorageBucket:      env("STORAGE_BUCKET", "logs"),
 		JWKSURL:            os.Getenv("SUPABASE_JWKS_URL"),
 		JWTSecret:          os.Getenv("SUPABASE_JWT_SECRET"),
-		SamplesDir:         env("SAMPLES_DIR", "../samples"),
+		SamplesBucket:      env("SAMPLES_BUCKET", "samples"),
+		SamplesDir:         os.Getenv("SAMPLES_DIR"),
 		AIProvider:         env("AI_PROVIDER", "mock"),
 	}
 
@@ -67,6 +76,11 @@ func Load() (Config, error) {
 		problems = append(problems, "RISK_THRESHOLD must be an integer from 0 to 100")
 	}
 	c.RiskThreshold = threshold
+
+	c.DBMaxConns, err = strconv.Atoi(env("DB_MAX_CONNS", "8"))
+	if err != nil || c.DBMaxConns < 2 {
+		problems = append(problems, "DB_MAX_CONNS must be an integer of at least 2")
+	}
 
 	if len(problems) > 0 {
 		return Config{}, errors.New(strings.Join(problems, "; "))

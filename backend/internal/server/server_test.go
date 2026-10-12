@@ -52,7 +52,7 @@ func newHarness(t *testing.T) *harness {
 	t.Helper()
 	st := storetest.New(t)
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	catalog := samples.NewCatalog(samplesDir)
+	catalog := samples.NewCatalog(samples.Dir(samplesDir))
 	hub := pipeline.NewHub()
 	runner := pipeline.NewRunner(st, fakeBlobs{}, catalog, hub, pipeline.NewAI("mock"), log)
 	srv := httptest.NewServer(server.New(server.Options{

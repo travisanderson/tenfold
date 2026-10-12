@@ -149,7 +149,7 @@ func parseLine(line string) (zscaler.Record, error) {
 // open returns the upload's bytes: a bundled sample, or the stored file.
 func (j *job) open(ctx context.Context) (io.ReadCloser, error) {
 	if j.u.Source == string(api.UploadSourceSample) && j.u.SampleName != nil {
-		f, err := j.r.samples.Open(*j.u.SampleName)
+		f, err := j.r.samples.Open(ctx, *j.u.SampleName)
 		if errors.Is(err, samples.ErrNotFound) {
 			return nil, failure{"sample_missing", "This demo sample is no longer available on the server."}
 		}

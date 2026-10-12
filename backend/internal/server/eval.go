@@ -23,7 +23,7 @@ func (s *Server) GetEvalReport(ctx context.Context, req api.GetEvalReportRequest
 	if u.SampleName == nil {
 		return nil, notFound() // an analyst's own file has no answer key
 	}
-	key, err := s.samples.AnswerKey(*u.SampleName)
+	key, err := s.samples.AnswerKey(ctx, *u.SampleName)
 	if err != nil {
 		return nil, err
 	}

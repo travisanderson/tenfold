@@ -2,6 +2,7 @@ package detect
 
 import (
 	"bufio"
+	"context"
 	"os"
 	"path/filepath"
 	"sort"
@@ -40,7 +41,7 @@ func loadSample(t *testing.T, name string) ([]model.Event, samples.AnswerKey) {
 	}
 	sort.SliceStable(events, func(i, j int) bool { return events[i].TS.Before(events[j].TS) })
 
-	key, err := samples.NewCatalog(samplesDir).AnswerKey(name)
+	key, err := samples.NewCatalog(samples.Dir(samplesDir)).AnswerKey(context.Background(), name)
 	if err != nil {
 		t.Fatalf("answer key: %v", err)
 	}

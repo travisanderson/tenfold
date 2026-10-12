@@ -125,6 +125,61 @@ func (s *Supabase) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
+// List returns the size of every file at the top level of the bucket, by
+// name. The demo samples are read this way.
+func (s *Supabase) List(ctx context.Context) (map[string]int64, error) {
+	resp, err := s.do(ctx, http.MethodPost, "/object/list/"+url.PathEscape(s.bucket), map[string]any{
+		"prefix": "", "limit": 1000, "offset": 0,
+		"sortBy": map[string]string{"column": "name", "order": "asc"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, statusError("list files", resp)
+	}
+	var objects []struct {
+		Name     string `json:"name"`
+		Metadata *struct {
+			Size int64 `json:"size"`
+		} `json:"metadata"` // null for a folder
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&objects); err != nil {
+		return nil, fmt.Errorf("storage: list files: %w", err)
+	}
+	sizes := map[string]int64{}
+	for _, o := range objects {
+		if o.Metadata != nil {
+			sizes[o.Name] = o.Metadata.Size
+		}
+	}
+	return sizes, nil
+}
+
+// Put uploads a file from the server, replacing any file already there.
+// Only tooling uses it: analysts' files go through signed URLs instead.
+func (s *Supabase) Put(ctx context.Context, key, contentType string, content io.Reader, size int64) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/object/"+s.objectPath(key), content)
+	if err != nil {
+		return err
+	}
+	req.ContentLength = size
+	req.Header.Set("Authorization", "Bearer "+s.key)
+	req.Header.Set("apikey", s.key)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("x-upsert", "true")
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("storage: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return statusError("upload file", resp)
+	}
+	return nil
+}
+
 func (s *Supabase) objectPath(key string) string {
 	return url.PathEscape(s.bucket) + "/" + key
 }

@@ -42,7 +42,7 @@ func (m memoryBlobs) Delete(_ context.Context, key string) error { delete(m, key
 func newRunner(t *testing.T, st *store.Store, blobs blob.Store, ai AI) *Runner {
 	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return NewRunner(st, blobs, samples.NewCatalog(samplesDir), NewHub(), ai, log)
+	return NewRunner(st, blobs, samples.NewCatalog(samples.Dir(samplesDir)), NewHub(), ai, log)
 }
 
 func sampleUpload(t *testing.T, st *store.Store, user uuid.UUID, name string) model.Upload {
@@ -125,7 +125,7 @@ func TestAttackDayEndToEnd(t *testing.T) {
 	}
 	t.Logf("%d lines -> %d events -> %d anomalies -> %d incidents",
 		*got.LineCount, *got.EventCount, *got.AnomalyCount, *got.IncidentCount)
-	key, _ := samples.NewCatalog(samplesDir).AnswerKey("attack-day")
+	key, _ := samples.NewCatalog(samples.Dir(samplesDir)).AnswerKey(ctx, "attack-day")
 	for _, scenario := range key.Scenarios {
 		if !scenario.Malicious() {
 			continue

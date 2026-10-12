@@ -50,7 +50,7 @@ func New(t *testing.T) *store.Store {
 	q.Set("search_path", schema)
 	u.RawQuery = q.Encode()
 
-	s, err := store.Open(ctx, u.String())
+	s, err := store.Open(ctx, u.String(), 4)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}

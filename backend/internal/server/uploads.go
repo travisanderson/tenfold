@@ -215,7 +215,7 @@ func (s *Server) StreamUploadProgress(ctx context.Context, req api.StreamUploadP
 // ---------- Samples ----------
 
 func (s *Server) ListSamples(ctx context.Context, _ api.ListSamplesRequestObject) (api.ListSamplesResponseObject, error) {
-	all, err := s.samples.List()
+	all, err := s.samples.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (s *Server) ListSamples(ctx context.Context, _ api.ListSamplesRequestObject
 
 func (s *Server) LoadSample(ctx context.Context, req api.LoadSampleRequestObject) (api.LoadSampleResponseObject, error) {
 	user := auth.UserFrom(ctx)
-	sample, err := s.samples.Get(req.SampleName)
+	sample, err := s.samples.Get(ctx, req.SampleName)
 	if err != nil {
 		return nil, err
 	}

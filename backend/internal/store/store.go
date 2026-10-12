@@ -27,9 +27,18 @@ type Store struct {
 	pool *pgxpool.Pool
 }
 
-// Open connects to Postgres and checks the connection.
-func Open(ctx context.Context, databaseURL string) (*Store, error) {
-	pool, err := pgxpool.New(ctx, databaseURL)
+// Open connects to Postgres and checks the connection. maxConns caps the
+// pool; zero keeps pgx's default.
+func Open(ctx context.Context, databaseURL string, maxConns int) (*Store, error) {
+	cfg, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		// pgx's message can quote the URL, password included.
+		return nil, errors.New("connect: DATABASE_URL is not a valid Postgres connection string")
+	}
+	if maxConns > 0 {
+		cfg.MaxConns = int32(maxConns)
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("connect: %w", err)
 	}
