@@ -70,6 +70,66 @@ Two kinds of test are skipped unless their input exists:
 - `SUPABASE_STORAGE_TEST=1 go test ./internal/blob/` writes one small file
   to the real bucket in `.env` and deletes it.
 
+## Evaluation
+
+The detectors were scored on 50 holdout days (seeds 101 to 150, on
+12 October 2026). No model ran, and nothing was tuned to the result. An
+attack counts as caught when a group at or above the threshold of 30 holds
+at least half of its lines. A decoy counts as raised when a group at or
+above the threshold is made of it.
+
+| Scenario | Result |
+| --- | --- |
+| Exfiltration | caught on 50 of 50 days |
+| Phishing click | caught on 50 of 50 |
+| Blocked burst | caught on 50 of 50 |
+| Beacon | caught on **11 of 50** |
+| Backup (decoy) | raised on 50 of 50 |
+| Code push (decoy) | raised on 48 of 50 |
+| Update agent (decoy) | raised on 4 of 50 |
+
+Nothing was raised that the generator did not plant. The median day raised
+5 groups.
+
+The beacon is the weak rule, and the interval is not what decides it:
+
+| Beacon interval | Caught |
+| --- | --- |
+| Under 1 minute | 1 of 8 |
+| 1 to 5 minutes | 4 of 13 |
+| 5 to 15 minutes | 4 of 13 |
+| 15 to 30 minutes | 2 of 16 |
+
+| What decides it | Caught |
+| --- | --- |
+| Fewer than 30 calls in the day | 0 of 16 |
+| 30 or more, timing off the beat by under 10% | 11 of 12 |
+| 30 or more, timing off the beat by 10% or more | 0 of 22 |
+
+What the numbers do and do not say:
+
+- **The beacon rule has two blind spots.** It needs 30 calls to one host
+  before it looks for a rhythm, and it wants 80% of the gaps within 10% of
+  the median. A beacon that is slow, or that varies its timing, goes
+  unflagged at any speed.
+- **A fast update agent floods the list.** The agent was raised on all 4
+  days it polled every 5 minutes, once per workstation: 74 groups.
+- **These are detector results, before the judge.** On the demo the judge
+  sets the code push aside. The backup scores above the judge's limit and
+  stays, by design; a lesson is the answer to it.
+- **The rates depend on the ranges** in `samples/loggen/script.go`, which
+  were chosen by the same person who wrote the detectors. The blind spots
+  are the finding; the percentages are not field rates.
+
+To run it again, from the repo root:
+
+```sh
+for seed in $(seq 101 150); do
+  (cd samples && go run ./loggen --profile holdout --seed $seed --out /tmp/holdout-set/holdout)
+  (cd backend && SAMPLES_DIR=/tmp/holdout-set go test ./internal/detect -run TestHoldout -v -count=1)
+done
+```
+
 ## Deploy
 
 A push to `main` deploys the API. Railway watches `backend/`, builds
