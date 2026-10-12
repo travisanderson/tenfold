@@ -2,9 +2,7 @@ import "server-only";
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
 
-/** The HTTP boundary for the backend handoff. Use only from a server module.
- * The browser-facing preview currently uses typed, session-local fixtures.
- */
+/** Authenticated backend boundary. Never import into a browser module. */
 export function createApiClient(baseUrl: string, accessToken: string) {
   return createClient<paths>({
     baseUrl,

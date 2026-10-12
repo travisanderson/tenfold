@@ -1888,3 +1888,10 @@ tr:last-child td {
   width: 100%;
   padding: 12px;
 }
+
+.upload-state-actions {
+  border: 0;
+  padding: 0;
+  margin: 24px 0;
+  min-width: 0;
+}

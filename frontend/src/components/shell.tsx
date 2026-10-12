@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "@/app/sign-in/actions";
 import { useState } from "react";
 export function Shell({
   children,
+  demo,
   hasData,
   uploadId,
   incidentTitle,
@@ -11,6 +13,7 @@ export function Shell({
   setZone,
 }: {
   children: React.ReactNode;
+  demo: boolean;
   hasData: boolean;
   uploadId?: string;
   incidentTitle?: string;
@@ -86,6 +89,11 @@ export function Shell({
             <option value="UTC">UTC</option>
           </select>
         </label>
+        {!demo && (
+          <form action={signOut}>
+            <button className="small-button">Sign out</button>
+          </form>
+        )}
       </header>
       <nav className="breadcrumbs" aria-label="Breadcrumb">
         <ol>

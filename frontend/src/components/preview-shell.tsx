@@ -1,5 +1,6 @@
 "use client";
 import { redirect, usePathname, useSearchParams } from "next/navigation";
+import { UploadProgress } from "./upload-progress";
 import { Shell } from "./shell";
 import { useWorkspace } from "./workspace";
 import { IncidentScreen } from "./incident";
@@ -29,6 +30,7 @@ export function PreviewShell() {
       uploadId={activeUpload}
       incidentTitle={incident?.title}
     >
+      <UploadProgress />
       {pathname === "/uploads" ? (
         <Uploads />
       ) : pathname === "/triage" ? (

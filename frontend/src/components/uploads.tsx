@@ -12,13 +12,26 @@ import {
 import { useWorkspace } from "./workspace";
 import { Pipeline } from "./pipeline";
 import type { Upload } from "@/lib/types";
-import { number, date, time } from "@/lib/format";
+import { LiveUploadState } from "./live-upload-state";
+import { registerUpload, analyzeUpload, deleteUpload } from "@/lib/api/actions";
+import { unwrap } from "@/lib/api/result";
+import { safeError, number, date, time } from "@/lib/format";
 export function Uploads() {
-  const { uploads, zone, loadDemo, setSelectedUploadId } = useWorkspace();
+  const {
+    uploads,
+    zone,
+    loadDemo,
+    setSelectedUploadId,
+    selectedUploadId,
+    setUploads,
+    demo,
+    live,
+  } = useWorkspace();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const active = uploads.find((u) => u.status === "processing") ?? uploads[0];
+  const active = uploads.find((u) => u.id === selectedUploadId) ?? uploads[0];
+  const sample = live?.samples.find((s) => s.name === "attack-day");
   const progress = active?.pipeline.find((s) => s.stage === active.stage);
   const stageNames = {
     uploaded: "Waiting to start",
@@ -50,10 +63,52 @@ export function Uploads() {
   const dropzone = useDropzone({
     accept: { "text/plain": [".log"], "text/csv": [".csv"] },
     maxSize: 52428800,
-    onDropAccepted: () =>
-      setError(
-        "This preview uses sample evidence. Load demo data to explore it. File analysis is available when the API connection is configured.",
-      ),
+    disabled: busy,
+    multiple: false,
+    onDropAccepted: async ([file]) => {
+      if (demo) {
+        setError("File analysis requires live mode.");
+        return;
+      }
+      setBusy(true);
+      setError("");
+      let registeredId = "";
+      try {
+        const contentType = file.name.toLowerCase().endsWith(".csv")
+          ? "text/csv"
+          : "text/plain";
+        const { upload, uploadUrl } = unwrap(
+          await registerUpload({
+            filename: file.name,
+            sizeBytes: file.size,
+            contentType,
+          }),
+        );
+        registeredId = upload.id;
+        const stored = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": contentType },
+          body: file,
+        });
+        if (!stored.ok)
+          throw new Error(
+            "The file could not be stored. Please choose it again.",
+          );
+        setUploads((items) => [upload, ...items]);
+        setSelectedUploadId(upload.id);
+        registeredId = ""; // Keep the stored file if starting analysis fails; it can be retried.
+        const running = unwrap(await analyzeUpload(upload.id));
+        setUploads((items) =>
+          items.map((u) => (u.id === upload.id ? running : u)),
+        );
+      } catch (e) {
+        if (registeredId)
+          await deleteUpload(registeredId).catch(() => undefined);
+        setError(safeError(e));
+      } finally {
+        setBusy(false);
+      }
+    },
     onDropRejected: () => setError("Choose a .log or .csv file up to 50 MB."),
     noClick: true,
     noKeyboard: true,
@@ -98,6 +153,17 @@ export function Uploads() {
         cell: ({ row: { original: u } }) =>
           u.status === "processing" ? (
             <span className="accent">Processing · {u.progress}%</span>
+          ) : u.status !== "completed" ? (
+            <button
+              className="text-button"
+              onClick={() => setSelectedUploadId(u.id)}
+            >
+              {u.status === "partial"
+                ? "Needs attention"
+                : u.status === "failed"
+                  ? "Failed"
+                  : "Waiting to start"}
+            </button>
           ) : (
             <Link
               href={`/triage?upload=${u.id}`}
@@ -135,7 +201,9 @@ export function Uploads() {
             {active?.status === "processing"
               ? progressLabels[active.stage]
               : active
-                ? "incidents ready for review."
+                ? active.status === "completed"
+                  ? "incidents ready for review."
+                  : "Your upload needs attention."
                 : "Your investigation starts here."}
           </h1>
           <p>
@@ -144,7 +212,13 @@ export function Uploads() {
                 {" "}
                 {active.status === "processing"
                   ? `${stageNames[active.stage]} · Stage ${stageNumbers[active.stage]} of 4.`
-                  : "Analysis complete."}{" "}
+                  : active.status === "completed"
+                    ? "Analysis complete."
+                    : active.status === "partial"
+                      ? "Analysis paused."
+                      : active.status === "failed"
+                        ? "Analysis failed."
+                        : "Ready to analyze."}{" "}
                 {active.status === "completed"
                   ? "Tenfold read"
                   : "Tenfold is reading"}{" "}
@@ -164,9 +238,14 @@ export function Uploads() {
           <p className="caption">
             {active.status === "processing"
               ? "Dashed lines are moving now. Counts update as each stage runs."
-              : "All stages finished. Open triage to review the results."}
+              : active.status === "completed"
+                ? "All stages finished. Open triage to review the results."
+                : "Review the upload status below to continue."}
           </p>
         </>
+      )}
+      {!demo && active && active.status !== "processing" && (
+        <LiveUploadState upload={active} />
       )}
       <div className="upload-grid section">
         <section
@@ -177,7 +256,7 @@ export function Uploads() {
           <h2>Drop {active ? "another" : "a"} day of Zscaler logs</h2>
           <p>NSS feed exports as .log or .csv, up to 50 MB each</p>
           <div className="actions">
-            <button className="primary" onClick={dropzone.open}>
+            <button className="primary" disabled={busy} onClick={dropzone.open}>
               Choose files
             </button>
             <button
@@ -188,9 +267,9 @@ export function Uploads() {
                 setError("");
                 try {
                   const u = await loadDemo();
-                  router.push(`/triage?upload=${u.id}`);
-                } catch {
-                  setError("Could not load demo data. Please try again.");
+                  if (demo) router.push(`/triage?upload=${u.id}`);
+                } catch (e) {
+                  setError(safeError(e));
                 } finally {
                   setBusy(false);
                 }
@@ -200,7 +279,11 @@ export function Uploads() {
             </button>
           </div>
           <small className="mono">
-            attack-day · 48,002 lines · 4 planted attacks · 3 decoys
+            {demo
+              ? "attack-day · 48,002 lines · 4 planted attacks · 3 decoys"
+              : sample
+                ? `${sample.name} · ${number(sample.lineCount)} lines · ${sample.description}`
+                : "Load a bundled sample to try the investigation flow."}
           </small>
         </section>
         <section className="panel recent-uploads">
@@ -244,11 +327,13 @@ export function Uploads() {
           {error}
         </p>
       )}
-      <footer className="page-footer">
-        <Link href="/states">
-          Preview processing, empty, partial, and failure states
-        </Link>
-      </footer>
+      {demo && (
+        <footer className="page-footer">
+          <Link href="/states">
+            Preview processing, empty, partial, and failure states
+          </Link>
+        </footer>
+      )}
     </>
   );
 }

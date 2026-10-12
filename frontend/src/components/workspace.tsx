@@ -2,9 +2,13 @@
 import { createContext, useContext, useState } from "react";
 import { initialIncidents } from "@/lib/incident-fixtures";
 import type { Incident, Upload, Schema } from "@/lib/types";
+import type { LiveData } from "@/lib/live-data";
+import { loadSample } from "@/lib/api/actions";
+import { unwrap } from "@/lib/api/result";
 import { completedUpload } from "@/lib/fixtures";
 
 type Workspace = {
+  live?: LiveData;
   lessons: Schema["Lesson"][];
   setLessons: React.Dispatch<React.SetStateAction<Schema["Lesson"][]>>;
   incidents: Incident[];
@@ -22,23 +26,37 @@ const Context = createContext<Workspace | null>(null);
 export function WorkspaceProvider({
   children,
   demo,
+  initialData,
 }: {
   children: React.ReactNode;
   demo: boolean;
+  initialData?: LiveData;
 }) {
   const [lessons, setLessons] = useState<Schema["Lesson"][]>([]);
-  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>(
+    initialData?.incidents ?? [],
+  );
   const [zone, setZone] = useState("America/New_York");
-  const [storedUploads, setUploads] = useState<Upload[]>([]);
-  const [selectedUploadId, setSelectedUploadId] = useState("");
+  const [storedUploads, setUploads] = useState<Upload[]>(
+    initialData?.uploads ?? [],
+  );
+  const [selectedUploadId, setSelectedUploadId] = useState(
+    initialData?.selectedUploadId ?? "",
+  );
   const uploads = storedUploads.map((upload) => {
     const relevant = incidents.filter((i) => i.uploadId === upload.id);
-    if (!relevant.length) return upload;
+    if (!demo || !relevant.length) return upload;
     const verdictCounts = { open: 0, confirmed: 0, dismissed: 0, escalated: 0 };
     relevant.forEach((i) => verdictCounts[i.analystVerdict.status]++);
     return { ...upload, verdictCounts };
   });
   async function loadDemo() {
+    if (!demo) {
+      const upload = unwrap(await loadSample());
+      setUploads((items) => [upload, ...items]);
+      setSelectedUploadId(upload.id);
+      return upload;
+    }
     const upload = {
       ...completedUpload,
       id: crypto.randomUUID(),
@@ -65,6 +83,7 @@ export function WorkspaceProvider({
   return (
     <Context.Provider
       value={{
+        live: initialData,
         lessons,
         setLessons,
         incidents,

@@ -15,7 +15,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <WorkspaceProvider demo>{children}</WorkspaceProvider>
+        {process.env.TENFOLD_FIXTURE_MODE === "true" ? (
+          <WorkspaceProvider demo>{children}</WorkspaceProvider>
+        ) : (
+          children
+        )}
       </body>
     </html>
   );

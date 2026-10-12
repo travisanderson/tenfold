@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useWorkspace } from "./workspace";
+import { LiveUploadState } from "./live-upload-state";
 import { UploadState } from "./upload-state";
 import { RiskTimeline, VolumeStrip } from "./charts";
 import { riskSeries, volumeSeries } from "@/lib/incident-fixtures";
@@ -22,9 +23,13 @@ export function Triage() {
     (u) => u.id === (query.get("upload") ?? state.selectedUploadId),
   );
   if (!upload) redirect("/uploads");
-  const incidents = state.incidents.filter((i) => i.uploadId === upload.id);
+  const incidents = (state.live?.summaries ?? state.incidents).filter(
+    (i) => i.uploadId === upload.id,
+  );
   if (upload.status !== "completed")
-    return (
+    return !state.demo ? (
+      <LiveUploadState upload={upload} />
+    ) : (
       <UploadState
         upload={upload}
         resume={() =>
@@ -98,6 +103,12 @@ export function Triage() {
           </div>
         </div>
       </section>
+      {!!upload.parseErrorCount && (
+        <p className="notice">
+          Partial read: {number(upload.parseErrorCount)} malformed lines were
+          skipped.
+        </p>
+      )}
       {incidents.length > 0 ? (
         <>
           <div className="section-heading">
@@ -131,7 +142,7 @@ export function Triage() {
               ))}
             </div>
             <RiskTimeline
-              series={riskSeries}
+              series={state.live?.riskSeries ?? riskSeries}
               incidents={incidents}
               threshold={upload.riskThreshold}
               zone={state.zone}
@@ -140,7 +151,10 @@ export function Triage() {
               }
             />
           </div>
-          <VolumeStrip series={volumeSeries} zone={state.zone} />
+          <VolumeStrip
+            series={state.live?.volumeSeries ?? volumeSeries}
+            zone={state.zone}
+          />
           <p className="caption">Bars: event volume per hour</p>
           <section className="incident-cards section">
             {incidents.map((i, index) => (
