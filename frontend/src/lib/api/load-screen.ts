@@ -8,9 +8,17 @@ export async function loadScreen(
   query: Record<string, string | string[] | undefined>,
 ): Promise<LiveData> {
   const api = await serverApi();
-  const page = required(
-    await api.GET("/v1/uploads", { params: { query: { limit: 100 } } }),
-  );
+  // These requests do not depend on one another. Start them together.
+  const [uploads, incidentResponse, samples] = await Promise.all([
+    api.GET("/v1/uploads", { params: { query: { limit: 100 } } }),
+    screen[0] === "incidents"
+      ? api.GET("/v1/incidents/{incidentId}", {
+          params: { path: { incidentId: screen[1] } },
+        })
+      : null,
+    screen[0] === "uploads" ? api.GET("/v1/samples") : null,
+  ]);
+  const page = required(uploads);
   const data: LiveData = {
     uploads: page.items,
     nextUploadCursor: page.nextCursor,
@@ -20,14 +28,11 @@ export async function loadScreen(
         : (page.items[0]?.id ?? ""),
     incidents: [],
     summaries: [],
-    samples: [],
+    samples: samples ? required(samples) : [],
   };
-  if (screen[0] === "incidents") {
-    const response = await api.GET("/v1/incidents/{incidentId}", {
-      params: { path: { incidentId: screen[1] } },
-    });
-    if (response.response.status === 404) notFound();
-    const incident = required(response);
+  if (incidentResponse) {
+    if (incidentResponse.response.status === 404) notFound();
+    const incident = required(incidentResponse);
     data.incidents = [incident];
     data.selectedUploadId = incident.uploadId;
   }
@@ -39,54 +44,56 @@ export async function loadScreen(
     if (response.response.status === 404) notFound();
     data.uploads.push(required(response));
   }
-  if (screen[0] === "uploads")
-    data.samples = required(await api.GET("/v1/samples"));
   const upload = data.uploads.find((u) => u.id === uploadId);
   if (!upload || !["completed", "partial"].includes(upload.status)) return data;
   const params = { path: { uploadId } };
-  if (["triage", "incidents"].includes(screen[0]))
-    data.summaries = required(
-      await api.GET("/v1/uploads/{uploadId}/incidents", { params }),
-    );
-  if (screen[0] === "triage") {
-    const [risk, volume] = await Promise.all([
-      api.GET("/v1/uploads/{uploadId}/timeseries", {
-        params: { ...params, query: { bucket: "10m" } },
-      }),
-      api.GET("/v1/uploads/{uploadId}/timeseries", {
-        params: { ...params, query: { bucket: "1h" } },
-      }),
+  // All screen data is server-rendered; independent reads share one wait.
+  const [summaries, risk, volume, evaluation, events, anomalies] =
+    await Promise.all([
+      ["triage", "incidents"].includes(screen[0])
+        ? api.GET("/v1/uploads/{uploadId}/incidents", { params })
+        : null,
+      screen[0] === "triage"
+        ? api.GET("/v1/uploads/{uploadId}/timeseries", {
+            params: { ...params, query: { bucket: "10m" } },
+          })
+        : null,
+      screen[0] === "triage"
+        ? api.GET("/v1/uploads/{uploadId}/timeseries", {
+            params: { ...params, query: { bucket: "1h" } },
+          })
+        : null,
+      screen[0] === "scorecard" && upload.source === "sample"
+        ? api.GET("/v1/uploads/{uploadId}/eval", { params })
+        : null,
+      screen[0] === "events"
+        ? api.GET("/v1/uploads/{uploadId}/events", {
+            params: {
+              ...params,
+              query: {
+                limit: 200,
+                q: typeof query.q === "string" ? query.q : undefined,
+              },
+            },
+          })
+        : null,
+      screen[0] === "anomalies"
+        ? api.GET("/v1/uploads/{uploadId}/anomalies", {
+            params: {
+              ...params,
+              query: {
+                limit: 200,
+                judgesDisagree: query.judgesDisagree === "true" || undefined,
+              },
+            },
+          })
+        : null,
     ]);
-    data.riskSeries = required(risk);
-    data.volumeSeries = required(volume);
-  }
-  if (screen[0] === "scorecard" && upload.source === "sample")
-    data.evaluation = required(
-      await api.GET("/v1/uploads/{uploadId}/eval", { params }),
-    );
-  if (screen[0] === "events")
-    data.events = required(
-      await api.GET("/v1/uploads/{uploadId}/events", {
-        params: {
-          ...params,
-          query: {
-            limit: 200,
-            q: typeof query.q === "string" ? query.q : undefined,
-          },
-        },
-      }),
-    );
-  if (screen[0] === "anomalies")
-    data.anomalies = required(
-      await api.GET("/v1/uploads/{uploadId}/anomalies", {
-        params: {
-          ...params,
-          query: {
-            limit: 200,
-            judgesDisagree: query.judgesDisagree === "true" || undefined,
-          },
-        },
-      }),
-    );
+  if (summaries) data.summaries = required(summaries);
+  if (risk) data.riskSeries = required(risk);
+  if (volume) data.volumeSeries = required(volume);
+  if (evaluation) data.evaluation = required(evaluation);
+  if (events) data.events = required(events);
+  if (anomalies) data.anomalies = required(anomalies);
   return data;
 }

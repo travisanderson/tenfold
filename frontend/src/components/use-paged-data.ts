@@ -8,15 +8,19 @@ export function usePagedData<T>(
   enabled: boolean,
 ) {
   const [page, setPage] = useState<Page<T>>(initial ?? { items: [], total: 0 });
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState<"replace" | "append" | null>(null);
+  const busy = loading !== null;
+  const initialRequest = useRef(fetchPage);
   const [error, setError] = useState("");
   const generation = useRef(0);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     if (!enabled) return;
+    // Hydration already has the server-rendered first page, even in Strict Mode.
+    if (initial && fetchPage === initialRequest.current && retry === 0) return;
     const current = ++generation.current;
     const timer = setTimeout(async () => {
-      setBusy(true);
+      setLoading("replace");
       setError("");
       try {
         const data = await fetchPage();
@@ -24,18 +28,18 @@ export function usePagedData<T>(
       } catch (e) {
         if (generation.current === current) setError(safeError(e));
       } finally {
-        if (generation.current === current) setBusy(false);
+        if (generation.current === current) setLoading(null);
       }
     }, 250);
     return () => {
       clearTimeout(timer);
       generation.current = current + 1;
     };
-  }, [fetchPage, enabled, retry]);
+  }, [fetchPage, enabled, retry, initial]);
   async function more() {
     if (busy || !page.nextCursor) return;
     const current = generation.current;
-    setBusy(true);
+    setLoading("append");
     setError("");
     try {
       const data = await fetchPage(page.nextCursor);
@@ -47,8 +51,15 @@ export function usePagedData<T>(
     } catch (e) {
       if (generation.current === current) setError(safeError(e));
     } finally {
-      if (generation.current === current) setBusy(false);
+      if (generation.current === current) setLoading(null);
     }
   }
-  return { page, busy, error, more, retry: () => setRetry((n) => n + 1) };
+  return {
+    page,
+    busy,
+    loadingMore: loading === "append",
+    error,
+    more,
+    retry: () => setRetry((n) => n + 1),
+  };
 }
