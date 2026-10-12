@@ -1,2 +1,5 @@
 .git
 *.md
+# Secrets and local data never enter the build context.
+.env
+.data/

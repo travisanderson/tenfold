@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -94,8 +95,14 @@ func run(log *slog.Logger) error {
 		IdleTimeout: 2 * time.Minute,
 	}
 
+	// Take the port before saying so, so a port already in use is an
+	// error and not a false "listening" line.
+	listener, err := net.Listen("tcp", httpServer.Addr)
+	if err != nil {
+		return err
+	}
 	failed := make(chan error, 1)
-	go func() { failed <- httpServer.ListenAndServe() }()
+	go func() { failed <- httpServer.Serve(listener) }()
 	log.Info("listening", "port", cfg.Port, "ai", cfg.AIProvider, "riskThreshold", cfg.RiskThreshold)
 
 	select {
