@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import {

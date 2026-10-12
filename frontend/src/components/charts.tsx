@@ -14,6 +14,7 @@ import annotationPlugin from "chartjs-plugin-annotation";
 import { Line, Bar } from "react-chartjs-2";
 import { useEffect, useState } from "react";
 import type { Schema, Incident } from "@/lib/types";
+import { ChartSkeleton } from "./skeleton";
 import { time, bytes } from "@/lib/format";
 ChartJS.register(
   CategoryScale,
@@ -66,7 +67,7 @@ export function RiskTimeline({
 }) {
   const p = usePalette();
   if (!p)
-    return <div className="chart-panel" aria-label="Loading risk chart" />;
+    return <ChartSkeleton className="chart-panel" label="Loading risk chart" />;
   const points = series.points;
   const markers = incidents.map((i) =>
     Math.max(
@@ -154,7 +155,10 @@ export function VolumeStrip({
   zone: string;
 }) {
   const p = usePalette();
-  if (!p) return null;
+  if (!p)
+    return (
+      <ChartSkeleton className="volume-chart" label="Loading event volume" />
+    );
   return (
     <div className="volume-chart">
       <Bar
@@ -205,7 +209,10 @@ export function IncidentChart({
   zone: string;
 }) {
   const p = usePalette();
-  if (!p) return <div className="incident-chart" />;
+  if (!p)
+    return (
+      <ChartSkeleton className="incident-chart" label="Loading request chart" />
+    );
   const events = incident.evidence;
   const baseline = incident.chart.baselineBytesOut;
   const options: ChartOptions<"bar"> = {

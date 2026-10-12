@@ -1,9 +1,10 @@
 "use client";
 import { useCallback, useState } from "react";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { useSearchParams } from "next/navigation";
 import { anomalyPage } from "@/lib/api/actions";
 import { unwrap } from "@/lib/api/result";
+import { SkeletonRows } from "./skeleton";
 import { usePagedData } from "./use-paged-data";
 import type { Schema } from "@/lib/types";
 import { anomalyFixtures } from "@/lib/evaluation-fixtures";
@@ -32,6 +33,7 @@ export function Anomalies() {
     [upload, filter],
   );
   const remote = usePagedData(live?.anomalies, fetchPage, !demo);
+  const replacing = !demo && remote.busy && !remote.loadingMore;
   const rows = demo
     ? anomalyFixtures.filter(
         (a) =>
@@ -61,6 +63,11 @@ export function Anomalies() {
           {remote.error} <button onClick={remote.retry}>Try again</button>
         </p>
       )}
+      {!demo && remote.busy && (
+        <p className="sr-only" role="status">
+          Loading anomalies…
+        </p>
+      )}
       <div className="panel table-scroll section" aria-busy={remote.busy}>
         <table>
           <thead>
@@ -75,33 +82,38 @@ export function Anomalies() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((a) => (
-              <tr key={a.id}>
-                <td className="mono">{time(a.firstSeen, zone)}</td>
-                <td>{a.reason}</td>
-                <td className="mono">{a.riskScore}/100</td>
-                <td>{words(a.disposition)}</td>
-                <td>
-                  {a.decision ? words(a.decision.label) : "Not available"}
-                </td>
-                <td>
-                  {a.shadowDecision
-                    ? words(a.shadowDecision.label)
-                    : "Not available"}
-                </td>
-                <td>
-                  <Link
-                    className="mono"
-                    href={`/events?upload=${upload}&q=${encodeURIComponent(a.eventIds.map((id) => `id:${id}`).join(" OR "))}`}
-                  >
-                    {a.eventIds.join(", ")}
-                  </Link>
-                </td>
-              </tr>
-            ))}
+            {replacing && <SkeletonRows columns={7} />}
+            {!replacing &&
+              rows.map((a) => (
+                <tr key={a.id}>
+                  <td className="mono">{time(a.firstSeen, zone)}</td>
+                  <td>{a.reason}</td>
+                  <td className="mono">{a.riskScore}/100</td>
+                  <td>{words(a.disposition)}</td>
+                  <td>
+                    {a.decision ? words(a.decision.label) : "Not available"}
+                  </td>
+                  <td>
+                    {a.shadowDecision
+                      ? words(a.shadowDecision.label)
+                      : "Not available"}
+                  </td>
+                  <td>
+                    <Link
+                      className="mono"
+                      href={`/events?upload=${upload}&q=${encodeURIComponent(a.eventIds.map((id) => `id:${id}`).join(" OR "))}`}
+                    >
+                      {a.eventIds.join(", ")}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            {!demo && remote.loadingMore && (
+              <SkeletonRows columns={7} rows={2} />
+            )}
           </tbody>
         </table>
-        {!rows.length && (
+        {!replacing && !rows.length && (
           <p className="empty">No anomalies match this filter.</p>
         )}
       </div>

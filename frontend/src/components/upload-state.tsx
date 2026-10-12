@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { useState } from "react";
 import type { Upload } from "@/lib/types";
 import { completedUpload, processingUpload } from "@/lib/fixtures";

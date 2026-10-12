@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useWorkspace } from "./workspace";
 import { ResponsiveDisclosure } from "./responsive-disclosure";

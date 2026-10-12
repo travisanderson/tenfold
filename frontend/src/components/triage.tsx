@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useWorkspace } from "./workspace";
 import { LiveUploadState } from "./live-upload-state";

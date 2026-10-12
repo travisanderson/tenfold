@@ -1900,3 +1900,64 @@ button.danger-button {
   border-color: var(--color-warning);
   color: var(--color-warning);
 }
+
+.navigation-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 1000;
+  pointer-events: none;
+  background: var(--color-accent);
+  opacity: 0;
+  animation: navigation-pending 1s ease-in-out 180ms infinite alternate;
+}
+@keyframes navigation-pending {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.skeleton {
+  display: block;
+  height: 1em;
+  width: 85%;
+  min-width: 40px;
+  border-radius: 4px;
+  background: var(--color-chart-bar);
+  animation: skeleton-pulse 1.4s ease-in-out infinite alternate;
+}
+.skeleton-short {
+  width: 55%;
+  margin-top: 8px;
+  height: 0.7em;
+}
+.skeleton-row td {
+  height: 70px;
+}
+@keyframes skeleton-pulse {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0.85;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .navigation-progress {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.chart-skeleton {
+  padding: 16px;
+}
+.chart-skeleton > .skeleton {
+  width: 100%;
+  height: 100%;
+}

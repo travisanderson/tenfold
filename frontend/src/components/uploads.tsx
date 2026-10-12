@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import {

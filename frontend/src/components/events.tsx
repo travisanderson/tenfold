@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { useSearchParams } from "next/navigation";
 import {
   useReactTable,
@@ -13,6 +13,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { eventPage } from "@/lib/api/actions";
 import { unwrap } from "@/lib/api/result";
+import { SkeletonRows } from "./skeleton";
 import { usePagedData } from "./use-paged-data";
 import type { Schema } from "@/lib/types";
 import { matchesQuery } from "@/lib/event-filter";
@@ -85,6 +86,7 @@ export function Events() {
     [allEvents, query, action, anomalous, hour, zone],
   );
   const filtered = demo ? localFiltered : remote.page.items;
+  const replacing = !demo && remote.busy && !remote.loadingMore;
   const selected = filtered.find((e) => e.id === selectedId);
   const scroll = useRef<HTMLDivElement>(null);
   const columns = useMemo<ColumnDef<LogEvent>[]>(
@@ -294,11 +296,18 @@ export function Events() {
           {remote.error} <button onClick={remote.retry}>Try again</button>
         </p>
       )}
-      {!demo && remote.busy && <p role="status">Loading events…</p>}
+      {!demo && remote.busy && (
+        <p className="sr-only" role="status">
+          Loading events…
+        </p>
+      )}
       <div
         className={`explorer-grid ${drawer && selected ? "has-drawer" : ""}`}
       >
-        <section className="panel explorer-panel">
+        <section
+          className="panel explorer-panel"
+          aria-busy={!demo && remote.busy}
+        >
           <div
             ref={scroll}
             className="explorer-scroll"
@@ -336,7 +345,12 @@ export function Events() {
                 ))}
               </thead>
               <tbody>
-                {top > 0 && (
+                {replacing && (
+                  <SkeletonRows
+                    columns={table.getVisibleLeafColumns().length}
+                  />
+                )}
+                {!replacing && top > 0 && (
                   <tr aria-hidden="true">
                     <td
                       colSpan={columns.length}
@@ -344,39 +358,43 @@ export function Events() {
                     />
                   </tr>
                 )}
-                {items.map((v) => {
-                  const row = rows[v.index];
-                  return (
-                    <tr
-                      key={row.original.id}
-                      className={
-                        selectedId === row.original.id ? "active-event" : ""
-                      }
-                      aria-selected={selectedId === row.original.id}
-                      onClick={() => choose(v.index)}
-                    >
-                      {row.getVisibleCells().map((c, i) => (
-                        <td key={c.id}>
-                          {i === 0 ? (
-                            <button
-                              className="event-row-button mono"
-                              aria-label={`Open event ${row.original.id}`}
-                              onClick={() => choose(v.index)}
-                            >
-                              {flexRender(
+                {!replacing &&
+                  items.map((v) => {
+                    const row = rows[v.index];
+                    return (
+                      <tr
+                        key={row.original.id}
+                        className={
+                          selectedId === row.original.id ? "active-event" : ""
+                        }
+                        aria-selected={selectedId === row.original.id}
+                        onClick={() => choose(v.index)}
+                      >
+                        {row.getVisibleCells().map((c, i) => (
+                          <td key={c.id}>
+                            {i === 0 ? (
+                              <button
+                                className="event-row-button mono"
+                                aria-label={`Open event ${row.original.id}`}
+                                onClick={() => choose(v.index)}
+                              >
+                                {flexRender(
+                                  c.column.columnDef.cell,
+                                  c.getContext(),
+                                )}
+                              </button>
+                            ) : (
+                              flexRender(
                                 c.column.columnDef.cell,
                                 c.getContext(),
-                              )}
-                            </button>
-                          ) : (
-                            flexRender(c.column.columnDef.cell, c.getContext())
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-                {bottom > 0 && (
+                              )
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                {!replacing && bottom > 0 && (
                   <tr aria-hidden="true">
                     <td
                       colSpan={columns.length}
@@ -384,9 +402,15 @@ export function Events() {
                     />
                   </tr>
                 )}
+                {!demo && remote.loadingMore && (
+                  <SkeletonRows
+                    columns={table.getVisibleLeafColumns().length}
+                    rows={2}
+                  />
+                )}
               </tbody>
             </table>
-            {!rows.length && (
+            {!replacing && !rows.length && (
               <div className="empty">
                 <h2>No events match these filters.</h2>
                 <p>Try another user, domain, IP, or event ID.</p>

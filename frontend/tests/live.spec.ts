@@ -14,7 +14,7 @@ async function signIn(page: Page) {
     .getByLabel("Password", { exact: true })
     .fill(process.env.TENFOLD_TEST_PASSWORD!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).not.toHaveURL(/sign-in/);
+  await expect(page).not.toHaveURL(/sign-in/, { timeout: 15_000 });
 }
 
 test("signed-out requests cannot read uploads or progress", async ({
@@ -176,4 +176,101 @@ test("a .log with an empty browser MIME type uploads, pauses, and cancels", asyn
   await expect(page.locator(".recent-uploads")).not.toContainText(filename);
   await page.reload();
   await expect(page.locator(".recent-uploads")).not.toContainText(filename);
+});
+
+test("navigation keeps the current page and reuses server-rendered results", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.locator(".triage-hero, .uploads-hero").waitFor();
+  test.skip(
+    (await page.locator(".incident-card").count()) === 0,
+    "Requires an existing completed demo; this check creates no data.",
+  );
+  const triageUrl = page.url();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let started!: () => void;
+  const requested = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  await page.route("**/events?**", async (route) => {
+    if (
+      route.request().method() === "GET" &&
+      route.request().headers().rsc === "1"
+    ) {
+      started();
+      await gate;
+    }
+    await route.continue();
+  });
+  let clientRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST") clientRequests++;
+  });
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "Events", exact: true })
+    .click();
+  await requested;
+  try {
+    await expect(page.locator(".triage-hero")).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Loading your investigation…", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("status", { name: "Opening page" }),
+    ).toBeVisible();
+  } finally {
+    release();
+  }
+  await expect(page.locator(".events-heading")).toBeVisible();
+  await page.waitForTimeout(800); // Detect an unwanted post-hydration refetch.
+  expect(clientRequests).toBe(0);
+  await expect(page.locator(".table-footer")).toContainText("200 of");
+  let releaseFilter!: () => void;
+  const filterGate = new Promise<void>((resolve) => {
+    releaseFilter = resolve;
+  });
+  await page.route("**/events?**", async (route) => {
+    if (route.request().method() === "POST") await filterGate;
+    await route.continue();
+  });
+  await page
+    .getByRole("main")
+    .getByRole("textbox", { name: "Search events", exact: true })
+    .fill("no-matching-host.invalid");
+  try {
+    await expect(page.locator(".skeleton-row").first()).toBeVisible();
+    await expect(page.locator(".events-heading")).toBeVisible();
+    await expect(page.locator(".explorer-panel")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    await page.screenshot({
+      path: "test-results/events-filter-skeleton.png",
+      fullPage: true,
+    });
+  } finally {
+    releaseFilter();
+  }
+  await expect(
+    page.getByRole("heading", { name: "No events match these filters." }),
+  ).toBeVisible();
+  expect(clientRequests).toBe(1);
+  await page.goto(triageUrl);
+  clientRequests = 0;
+  await page
+    .getByRole("link", { name: "See anomalies set aside, and why" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "What was set aside, and why." }),
+  ).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(clientRequests).toBe(0);
 });

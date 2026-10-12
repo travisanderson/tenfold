@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { NavigationLink as Link } from "./navigation-link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/app/sign-in/actions";
 import { useState } from "react";

@@ -7,7 +7,8 @@ Live mode is the default. The logo opens Triage; an account with no uploads land
 ## Live integration
 
 - Supabase cookie sessions are verified on the server and refreshed by Next.js Proxy. Sign out clears the session. Backend `401` responses lead to sign-in.
-- `src/lib/api/client.ts` is the server-only, typed `openapi-fetch` boundary. Server Components load screens and Server Actions perform mutations. The browser never calls the Go API directly.
+- `src/lib/api/client.ts` is the server-only, typed `openapi-fetch` boundary. Server Components load screens and Server Actions perform mutations. The browser never calls the Go API directly. Independent screen reads run in parallel.
+- Navigation keeps the current screen visible until the next server-rendered screen is ready, with a thin progress indicator for slower links. Events and Anomalies reuse the server-provided first page instead of fetching it again during hydration. Client-side filters and pagination use table skeletons; charts reserve their space while mounting. Skeleton animations respect reduced-motion preferences.
 - `.log` files register as `text/plain`; `.csv` files register as `text/csv`. A browser PUT sends the file to the signed storage URL without an authorization header. Files are limited to 50 MB.
 - **Clear data**, beside Recent uploads, deletes all account uploads and their results after confirmation. It stops running jobs and returns to an empty Uploads screen. Saved lessons are kept unless “Also delete saved lessons” is selected. The account stays signed in.
 - Load demo data registers `attack-day` on the server. Progress passes through an authenticated SSE relay. Streams close on completion, error, or partial status; the client then reads the upload again. Interrupted streams offer Reconnect.
@@ -45,6 +46,8 @@ npm run build
 # Against a running live-mode dev server; set these in your shell:
 # TENFOLD_TEST_EMAIL and TENFOLD_TEST_PASSWORD
 npx playwright test tests/live.spec.ts --workers=1
+# Read-only navigation/loading check against an existing completed demo:
+npx playwright test tests/live.spec.ts -g "navigation keeps"
 # Against a separate fixture-mode dev server:
 TENFOLD_FIXTURE_MODE=true npx playwright test tests/preview.spec.ts
 ```
