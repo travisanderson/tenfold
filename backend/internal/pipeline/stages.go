@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -29,6 +31,11 @@ const (
 	// benign. It may do so only below this risk score. At or above it, the
 	// group reaches the analyst whatever the model says.
 	aiSetAsideBelow = 65
+
+	aiWorkers          = 4  // model requests in flight at once
+	judgeEvidence      = 12 // events the judge is shown for one anomaly
+	narrativeEvidence  = 12 // events per anomaly the narrator is shown
+	maxNarrativeEvents = 60 // and the most it is shown for one incident
 )
 
 // ---------- Stage 1: parsing ----------
@@ -247,29 +254,75 @@ func (j *job) judge(ctx context.Context) error {
 		return errAIUnavailable
 	}
 
-	done, kept := 0, 0
-	for _, g := range groups {
+	// One question per anomaly, each with a sample of that anomaly's events.
+	// A group's questions sit together, starting at first[group].
+	var (
+		inputs  []JudgeInput
+		groupOf []int
+		first   = make([]int, len(groups))
+		left    = make([]int, len(groups))
+	)
+	for gi, g := range groups {
+		first[gi], left[gi] = len(inputs), len(g.Anomalies)
 		for _, a := range g.Anomalies {
-			decision, err := j.r.ai.Judge.Decide(ctx, JudgeInput{Anomaly: *a, Group: g})
+			evidence, err := j.r.store.EventsByLineNos(ctx, j.u.ID, sampleLines(a.LineNos, judgeEvidence), judgeEvidence)
 			if err != nil {
-				if ctx.Err() != nil {
-					return ctx.Err()
+				return err
+			}
+			inputs = append(inputs, JudgeInput{Anomaly: *a, Group: g, Evidence: evidence})
+			groupOf = append(groupOf, gi)
+		}
+	}
+
+	type ruling struct {
+		decision api.Decision
+		shadow   *api.Decision
+	}
+	rulings := make([]ruling, len(inputs))
+	done, kept := 0, 0
+	err = inParallel(ctx, len(inputs), func(ctx context.Context, i int) (ruling, error) {
+		decision, err := j.r.ai.Judge.Decide(ctx, inputs[i])
+		if err != nil {
+			return ruling{}, fmt.Errorf("%w: %v", errAIUnavailable, err)
+		}
+		r := ruling{decision: decision}
+		if j.r.ai.Shadow != nil {
+			// The shadow is for comparison only; if it fails, go on without it.
+			if second, err := j.r.ai.Shadow.Decide(ctx, inputs[i]); err == nil {
+				r.shadow = &second
+			}
+		}
+		return r, nil
+	}, func(i int, r ruling) error {
+		rulings[i] = r
+		done++
+
+		// When the last ruling of a group is in, the group is settled. No
+		// request for it is still running, so its anomalies are safe to write.
+		gi := groupOf[i]
+		if left[gi]--; left[gi] == 0 {
+			g := groups[gi]
+			for k, a := range g.Anomalies {
+				a.Decision, a.ShadowDecision = &rulings[first[gi]+k].decision, rulings[first[gi]+k].shadow
+			}
+			verdict, _ := groupVerdict(g)
+			if verdict == api.AiVerdictLikelyBenign && g.RiskScore < aiSetAsideBelow {
+				for _, a := range g.Anomalies {
+					a.Disposition = model.DispositionJudgedBenign
 				}
-				return fmt.Errorf("%w: %v", errAIUnavailable, err)
+			} else {
+				kept += len(g.Anomalies)
 			}
-			a.Decision = &decision
-			done++
-			j.advance(ctx, stage, done, done, candidates, fmt.Sprintf("Judging anomaly %d of %d", done, candidates))
+			j.stage(stage).CountOut = ptr(kept)
 		}
-		verdict, _ := groupVerdict(g)
-		if verdict == api.AiVerdictLikelyBenign && g.RiskScore < aiSetAsideBelow {
-			for _, a := range g.Anomalies {
-				a.Disposition = model.DispositionJudgedBenign
-			}
-		} else {
-			kept += len(g.Anomalies)
+		j.advance(ctx, stage, done, done, candidates, fmt.Sprintf("Judging anomaly %d of %d", done, candidates))
+		return nil
+	})
+	if err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
-		j.stage(stage).CountOut = ptr(kept)
+		return err
 	}
 
 	if err := j.r.store.SaveDecisions(ctx, anomalies); err != nil {
@@ -372,21 +425,41 @@ func (j *job) narrate(ctx context.Context) error {
 	}
 
 	j.stage(stage).CountIn = ptr(len(incidents))
-	generated := 0
+	inputs := make([]NarrateInput, len(incidents))
 	for i, inc := range incidents {
-		in := NarrateInput{Incident: inc, Anomalies: byIncident[inc.ID]}
-		draft, err := narrator.Narrate(ctx, in)
+		found := byIncident[inc.ID]
+		evidence, err := j.r.store.EventsByLineNos(ctx, j.u.ID, narrativeSample(found), maxNarrativeEvents)
 		if err != nil {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			return fmt.Errorf("%w: %v", errAIUnavailable, err)
+			return err
+		}
+		inputs[i] = NarrateInput{Incident: inc, Anomalies: found, Evidence: evidence}
+	}
+
+	// attempt is one try at a narrative: a draft, or why there is none.
+	type attempt struct {
+		draft   Draft
+		problem error
+	}
+	generated, written := 0, 0
+	err = inParallel(ctx, len(inputs), func(ctx context.Context, i int) (attempt, error) {
+		draft, err := narrator.Narrate(ctx, inputs[i])
+		switch {
+		case errors.Is(err, errNoAnswer):
+			return attempt{problem: err}, nil // the model is up; this incident gets the template
+		case err != nil:
+			return attempt{}, fmt.Errorf("%w: %v", errAIUnavailable, err)
+		}
+		return attempt{draft: draft}, nil
+	}, func(i int, a attempt) error {
+		inc, draft, problem := incidents[i], a.draft, a.problem
+		if problem == nil {
+			problem = checkCitations(draft, inc.LineNos)
 		}
 		now := time.Now().UTC()
-		if err := checkCitations(draft, inc.LineNos); err != nil {
-			j.r.log.Warn("a narrative failed its citation check; using the template",
-				"upload", j.u.ID, "incident", inc.ID, "reason", err.Error())
-			draft = templateDraft(in)
+		if problem != nil {
+			j.r.log.Warn("a narrative could not be used; using the template",
+				"upload", j.u.ID, "incident", inc.ID, "reason", problem.Error())
+			draft = templateDraft(inputs[i])
 			inc.Detail.Narrative = narrative(draft, api.NarrativeStatusTemplate, api.DecisionProviderRules, now)
 		} else {
 			inc.Detail.Narrative = narrative(draft, api.NarrativeStatusGenerated, narrator.Provider(), now)
@@ -396,13 +469,107 @@ func (j *job) narrate(ctx context.Context) error {
 		if err := j.r.store.SaveNarrative(ctx, inc); err != nil {
 			return err
 		}
-		j.advance(ctx, stage, i+1, i+1, len(incidents), fmt.Sprintf("Writing report %d of %d", i+1, len(incidents)))
+		written++
+		j.advance(ctx, stage, written, written, len(incidents), fmt.Sprintf("Writing report %d of %d", written, len(incidents)))
+		return nil
+	})
+	if err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		return err
 	}
 	j.finish(ctx, stage, len(incidents), generated, "Report written")
 	return nil
 }
 
 // ---------- Helpers ----------
+
+// inParallel calls work for every index below n, a few at a time, and calls
+// done on the caller's goroutine as each one finishes. Only work runs on
+// other goroutines, so done may change the job freely. The first error,
+// from either function, cancels the rest and is returned.
+func inParallel[T any](ctx context.Context, n int, work func(context.Context, int) (T, error), done func(int, T) error) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	type result struct {
+		i     int
+		value T
+		err   error
+	}
+	next, results := make(chan int), make(chan result)
+	var workers sync.WaitGroup
+	for range min(aiWorkers, n) {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			for i := range next {
+				value, err := work(ctx, i)
+				results <- result{i, value, err}
+			}
+		}()
+	}
+	go func() {
+		// In order: no more work, wait for what is running, no more results.
+		defer close(results)
+		defer workers.Wait()
+		defer close(next)
+		for i := range n {
+			select {
+			case next <- i:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	var first error
+	for r := range results {
+		err := r.err
+		if err == nil && first == nil {
+			err = done(r.i, r.value)
+		}
+		if err != nil && first == nil {
+			first = err
+			cancel()
+		}
+	}
+	return first
+}
+
+// sampleLines picks at most n of some line numbers, evenly spaced and
+// always with the first and the last, so a sample spans the whole activity.
+func sampleLines(lines []int, n int) []int {
+	if len(lines) <= n {
+		return lines
+	}
+	out := make([]int, n)
+	for i := range out {
+		out[i] = lines[i*(len(lines)-1)/(n-1)]
+	}
+	return out
+}
+
+// narrativeSample picks the events a narrator is shown: a sample from each
+// anomaly, so every detector's evidence is there to cite.
+func narrativeSample(anomalies []model.Anomaly) []int {
+	seen := map[int]bool{}
+	var lines []int
+	for _, a := range anomalies {
+		for _, n := range sampleLines(a.LineNos, narrativeEvidence) {
+			if !seen[n] {
+				seen[n] = true
+				lines = append(lines, n)
+			}
+		}
+	}
+	sort.Ints(lines)
+	if len(lines) > maxNarrativeEvents {
+		lines = sampleLines(lines, maxNarrativeEvents)
+	}
+	return lines
+}
 
 // countingReader counts the bytes read through it, for the progress bar.
 type countingReader struct {

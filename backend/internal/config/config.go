@@ -35,8 +35,14 @@ type Config struct {
 	// pool must stay well under it.
 	DBMaxConns int
 
-	// AIProvider picks the decision and narrative provider: "mock" or "none".
-	AIProvider    string
+	// AIProvider picks the decision and narrative provider: "claude",
+	// "mock" or "none". Claude needs AnthropicAPIKey. The two models are
+	// optional; empty means the pipeline's defaults.
+	AIProvider      string
+	AnthropicAPIKey string
+	JudgeModel      string
+	NarrativeModel  string
+
 	RiskThreshold int
 }
 
@@ -53,6 +59,9 @@ func Load() (Config, error) {
 		SamplesBucket:      env("SAMPLES_BUCKET", "samples"),
 		SamplesDir:         os.Getenv("SAMPLES_DIR"),
 		AIProvider:         env("AI_PROVIDER", "mock"),
+		AnthropicAPIKey:    os.Getenv("ANTHROPIC_API_KEY"),
+		JudgeModel:         os.Getenv("AI_JUDGE_MODEL"),
+		NarrativeModel:     os.Getenv("AI_NARRATIVE_MODEL"),
 	}
 
 	var problems []string
@@ -68,8 +77,14 @@ func Load() (Config, error) {
 	if c.JWKSURL == "" && c.JWTSecret == "" && c.SupabaseURL != "" {
 		c.JWKSURL = c.SupabaseURL + "/auth/v1/.well-known/jwks.json"
 	}
-	if c.AIProvider != "mock" && c.AIProvider != "none" {
-		problems = append(problems, fmt.Sprintf("AI_PROVIDER %q is not mock or none", c.AIProvider))
+	switch c.AIProvider {
+	case "mock", "none":
+	case "claude":
+		if c.AnthropicAPIKey == "" {
+			problems = append(problems, "ANTHROPIC_API_KEY is required when AI_PROVIDER is claude")
+		}
+	default:
+		problems = append(problems, fmt.Sprintf("AI_PROVIDER %q is not claude, mock or none", c.AIProvider))
 	}
 	threshold, err := strconv.Atoi(env("RISK_THRESHOLD", "30"))
 	if err != nil || threshold < 0 || threshold > 100 {

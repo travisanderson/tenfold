@@ -6,6 +6,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"log/slog"
@@ -81,8 +82,15 @@ func run(log *slog.Logger) error {
 		log.Warn("no demo samples found; 'Load demo data' will be empty. Run `go run ./cmd/uploadsamples`.")
 	}
 
+	ai := pipeline.NewAI(cfg.AIProvider)
+	if cfg.AIProvider == "claude" {
+		ai = pipeline.NewClaudeAI(cfg.AnthropicAPIKey,
+			cmp.Or(cfg.JudgeModel, pipeline.DefaultJudgeModel),
+			cmp.Or(cfg.NarrativeModel, pipeline.DefaultNarrativeModel))
+	}
+
 	hub := pipeline.NewHub()
-	runner := pipeline.NewRunner(st, blobs, catalog, hub, pipeline.NewAI(cfg.AIProvider), log)
+	runner := pipeline.NewRunner(st, blobs, catalog, hub, ai, log)
 	if err := runner.RecoverStranded(startup); err != nil {
 		return err
 	}

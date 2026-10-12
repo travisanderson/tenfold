@@ -109,6 +109,41 @@ railway up                    # from backend/
 
 ## Settings
 
-See `.env.example`. `AI_PROVIDER` is `mock` (an offline stand-in) or `none`.
-The real providers plug in behind the `Judge` and `Narrator` interfaces in
-`internal/pipeline/ai.go`.
+See `.env.example`.
+
+## The AI layer
+
+`AI_PROVIDER` picks who fills the two AI roles, both defined in
+`internal/pipeline/ai.go`:
+
+| Role | Runs | Asks |
+| --- | --- | --- |
+| `Judge` | once per anomaly in a group that reached the threshold | likely malicious, likely benign, or inconclusive? |
+| `Narrator` | once per incident | what happened, in sentences that cite events |
+
+- `mock` (the default) labels by risk score and writes the template text.
+  It needs no key and costs nothing, so tests and offline demos use it.
+- `claude` calls the Anthropic API (`internal/pipeline/claude.go`) and needs
+  `ANTHROPIC_API_KEY`. The judge defaults to `claude-haiku-5-5`, the
+  narrator to `claude-opus-5-5`. The mock judge runs beside Claude as a
+  shadow, so the scorecard can compare the two.
+- `none` runs no AI. The upload ends as `partial` with `ai_unavailable`.
+
+What the model is shown: the detector's finding, its measurements, and a
+sample of normalized events, 12 per anomaly. It is not shown the raw log
+line, the risk score or the signal weights; the judge is a second opinion
+and should not be anchored on the first.
+
+What the model cannot do:
+
+- Change a risk score, or set aside a group that scores 65 or more.
+- Put an uncited sentence in front of the analyst. A draft that cites an
+  event outside the incident is replaced by the template.
+- Stop the job. If Claude cannot be reached, the upload ends as `partial`
+  with scores and evidence complete. If it declines or returns something
+  unusable, the anomaly is marked `inconclusive`, or the incident gets the
+  template.
+
+Log fields such as the URL and the user agent are written by whoever made
+the request. Both prompts tell the model to treat them as data, never as
+instructions, and the limits above hold even if it does not.

@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"tenfold/backend/internal/samples"
 	"tenfold/backend/internal/store"
 	"tenfold/backend/internal/store/storetest"
+	"tenfold/backend/internal/zscaler"
 )
 
 const samplesDir = "../../../samples"
@@ -297,4 +299,103 @@ func overlap(evidence, scenario []int) float64 {
 		}
 	}
 	return float64(hit) / float64(len(scenario))
+}
+
+// threatLog is the smallest file that raises an incident: a few ordinary
+// requests and one the proxy tagged as phishing and let through.
+func threatLog() string {
+	at := time.Date(2026, 10, 6, 14, 0, 0, 0, time.UTC)
+	var lines []string
+	for i := range 6 {
+		r := zscaler.Record{
+			Time: at.Add(time.Duration(i) * time.Minute), RecordID: int64(i + 1),
+			Login: "priya.s@northwindlabs.example", Dept: "Marketing", ClientIP: "10.20.4.9", ServerIP: "203.0.113.7",
+			Host: "www.wikipedia.org", URL: "https://www.wikipedia.org/", URLCategory: "Reference",
+			Action: "Allowed", Method: "GET", Status: 200, ReqSize: 400, RespSize: 9000, DeviceHostname: "WS-109",
+		}
+		if i == 3 {
+			r.Host, r.URL = "secure-login-verify.example", "https://secure-login-verify.example/signin"
+			r.URLCategory, r.ThreatName, r.RiskScore = "Phishing", "Phish.Generic", 90
+		}
+		lines = append(lines, r.Format())
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+// stubNarrator returns a fixed draft or a fixed error.
+type stubNarrator struct {
+	draft Draft
+	err   error
+}
+
+func (stubNarrator) Provider() api.DecisionProvider { return api.DecisionProviderClaude }
+func (n stubNarrator) Narrate(context.Context, NarrateInput) (Draft, error) {
+	return n.draft, n.err
+}
+
+// stubJudge returns a fixed error.
+type stubJudge struct{ err error }
+
+func (j stubJudge) Decide(context.Context, JudgeInput) (api.Decision, error) {
+	return api.Decision{}, j.err
+}
+
+func TestANarrativeThatCannotBeUsedBecomesTheTemplate(t *testing.T) {
+	st := storetest.New(t)
+	invented := Draft{Summary: "Invented.", Sentences: []api.NarrativeSentence{
+		{Text: "Something happened on a line that is not in the evidence.", Citations: []string{"e999999"}},
+	}}
+	for name, narrator := range map[string]Narrator{
+		"cites outside the evidence": stubNarrator{draft: invented},
+		"gives no answer":            stubNarrator{err: fmt.Errorf("%w: it declined the request", errNoAnswer)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			blobs, user := memoryBlobs{}, uuid.New()
+			r := newRunner(t, st, blobs, AI{Judge: MockJudge{}, Narrator: narrator, Shadow: MockJudge{}})
+			got := analyze(t, r, st, fileUpload(t, st, blobs, user, threatLog()), Options{})
+			if got.Status != "completed" {
+				t.Fatalf("status %s, stop %+v: one bad draft must not stop the job", got.Status, got.Stop)
+			}
+			incidents, err := st.ListIncidents(ctx, user, got.ID)
+			if err != nil || len(incidents) != 1 {
+				t.Fatalf("%d incidents, err %v", len(incidents), err)
+			}
+			n := incidents[0].Detail.Narrative
+			if n.Status != api.NarrativeStatusTemplate || n.Provider == nil || *n.Provider != api.DecisionProviderRules {
+				t.Errorf("narrative status %s, provider %v", n.Status, n.Provider)
+			}
+			if err := checkCitations(Draft{Sentences: n.Sentences}, incidents[0].LineNos); err != nil {
+				t.Errorf("the template narrative: %v", err)
+			}
+
+			// The shadow judge's rulings are saved beside the judge's.
+			anomalies, _ := st.LoadAnomalies(ctx, got.ID)
+			for _, a := range anomalies {
+				if a.Disposition == model.DispositionInIncident && (a.Decision == nil || a.ShadowDecision == nil) {
+					t.Errorf("%s: decision %v, shadow %v", a.Detector, a.Decision, a.ShadowDecision)
+				}
+			}
+		})
+	}
+}
+
+func TestWhenTheModelCannotBeReachedTheScoresStillArrive(t *testing.T) {
+	st := storetest.New(t)
+	down := errors.New("connection refused")
+	for name, ai := range map[string]AI{
+		"judge down":    {Judge: stubJudge{err: down}, Narrator: MockNarrator{}},
+		"narrator down": {Judge: MockJudge{}, Narrator: stubNarrator{err: down}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			blobs, user := memoryBlobs{}, uuid.New()
+			got := analyze(t, newRunner(t, st, blobs, ai), st, fileUpload(t, st, blobs, user, threatLog()), Options{})
+			if got.Status != "partial" || got.Stop == nil || got.Stop.Reason != api.StopReasonAiUnavailable {
+				t.Fatalf("status %s, stop %+v", got.Status, got.Stop)
+			}
+			incidents, _ := st.ListIncidents(ctx, user, got.ID)
+			if len(incidents) != 1 || incidents[0].RiskScore != 60 {
+				t.Fatalf("incidents = %+v, want the one threat hit at risk 60", incidents)
+			}
+		})
+	}
 }

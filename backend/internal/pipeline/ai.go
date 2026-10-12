@@ -9,16 +9,18 @@ import (
 	"tenfold/backend/internal/model"
 )
 
-// Judge gives the fast AI decision on one anomaly. It sees the anomaly and
-// the group it belongs to. It never sees or changes the risk score's inputs.
+// Judge gives the fast AI decision on one anomaly. It sees the anomaly, the
+// group it belongs to and a sample of the events behind it. It cannot
+// change the risk score.
 type Judge interface {
 	Decide(ctx context.Context, in JudgeInput) (api.Decision, error)
 }
 
 // JudgeInput is what a judge is shown.
 type JudgeInput struct {
-	Anomaly model.Anomaly
-	Group   detect.Group
+	Anomaly  model.Anomaly
+	Group    detect.Group
+	Evidence []model.Event // a sample of the anomaly's events, in time order
 }
 
 // Narrator writes the account of one incident. Every sentence must cite
@@ -32,6 +34,7 @@ type Narrator interface {
 type NarrateInput struct {
 	Incident  model.Incident
 	Anomalies []model.Anomaly
+	Evidence  []model.Event // a sample of the incident's events, in time order
 }
 
 // Draft is a narrator's output, before its citations are checked.
@@ -41,16 +44,21 @@ type Draft struct {
 	NextSteps []string
 }
 
-// AI is the pair of providers a job uses. Both nil means no AI: the job
-// still scores, groups and reports, and says the AI did not run.
+// AI is the set of providers a job uses. Judge and Narrator both nil means
+// no AI: the job still scores, groups and reports, and says the AI did not
+// run.
+//
+// Shadow is an optional second judge. Its decisions are saved beside the
+// judge's for the scorecard to compare. They never change a result, and a
+// shadow that fails is skipped.
 type AI struct {
 	Judge    Judge
 	Narrator Narrator
+	Shadow   Judge
 }
 
-// NewAI returns the providers for a configured name: "mock" or "none".
-// The real providers arrive in a later session behind these same two
-// interfaces.
+// NewAI returns the offline providers for a configured name: "mock" or
+// "none". NewClaudeAI returns the real ones.
 func NewAI(provider string) AI {
 	if provider == "mock" {
 		return AI{Judge: MockJudge{}, Narrator: MockNarrator{}}

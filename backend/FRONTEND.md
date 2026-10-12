@@ -132,9 +132,14 @@ judging runs, its entry has `countIn` and `processed` ("judging 132 of
 - **Five incidents, not three**, on `attack-day`: four planted attacks and
   the backup decoy. The engineer's large GitHub push is set aside by the
   judge and appears under `GET .../anomalies?disposition=judged_benign`.
-- **The AI is a stand-in for now.** `decision.provider` and
-  `narrative.provider` are `mock`. `shadowDecision` is absent, so the "two
-  judges" view has one judge and `judgeAgreement.total` is 0.
+- **The AI depends on the server's `AI_PROVIDER`.** With `mock`, the
+  default, `decision.provider` and `narrative.provider` are `mock`,
+  `shadowDecision` is absent, and `judgeAgreement.total` is 0, so the "two
+  judges" view has one judge. With `claude`, the providers are `claude`,
+  `decision.model` names the model, and `shadowDecision` holds the mock
+  judge's ruling. A narrative whose `status` is `template` has the provider
+  `rules`, whatever the server runs. Draw what the fields say; never
+  assume a provider.
 - **Absent means absent.** Optional fields are left out, never `null`.
   Arrays are always present and may be empty.
 - **Errors are Problem Details** (`application/problem+json`) with a
