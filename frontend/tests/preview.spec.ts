@@ -39,3 +39,20 @@ for (const width of [1440, 390]) {
   await page.screenshot({path:`test-results/incident-${width}.png`,fullPage:true});
  });
 }
+for (const width of [1440, 390]) {
+ test(`events at ${width}px`, async ({page})=>{
+  await page.setViewportSize({width,height:1000});await page.goto('/events');
+  await expect(page.getByRole('heading',{name:'Every event, as logged.'})).toBeVisible();
+  await page.getByRole('main').getByRole('textbox',{name:'Search events',exact:true}).fill('id:e1048');
+  await expect(page.getByRole('button',{name:'Open event e1048'})).toBeVisible();
+  await page.getByRole('button',{name:'Open event e1048'}).click();
+  await expect(page.getByRole('heading',{name:'Event e1048 · all 21 fields'})).toBeVisible();
+  await page.getByRole('main').getByRole('textbox',{name:'Search events',exact:true}).fill('user:missing');
+  await expect(page.getByRole('heading',{name:'No events match these filters.'})).toBeVisible();
+  await page.getByRole('button',{name:'Clear filters',exact:true}).click();
+  await page.getByRole('region',{name:/Event results/}).focus();await page.keyboard.press('j');
+  await expect(page.getByRole('heading',{name:'Event e1049 · all 21 fields'})).toBeVisible();
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth',width);
+  await page.screenshot({path:`test-results/events-${width}.png`,fullPage:true});
+ });
+}
