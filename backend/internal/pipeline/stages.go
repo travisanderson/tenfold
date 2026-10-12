@@ -176,6 +176,7 @@ func (j *job) detect(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	j.stage(stage).CountIn = ptr(len(events))
 	j.advance(ctx, stage, 0, 0, 1, fmt.Sprintf("Scoring %s", pluralize(len(events), "event")))
 	anomalies := detect.Run(j.u.ID, events)
 
@@ -239,6 +240,9 @@ func (j *job) judge(ctx context.Context) error {
 			}
 		}
 	}
+	// Counts are set while the stage runs, so the UI can say "132 of 198"
+	// and how many have been set aside so far (processed minus kept).
+	j.stage(stage).CountIn = &candidates
 	if j.r.ai.Judge == nil {
 		return errAIUnavailable
 	}
@@ -265,6 +269,7 @@ func (j *job) judge(ctx context.Context) error {
 		} else {
 			kept += len(g.Anomalies)
 		}
+		j.stage(stage).CountOut = ptr(kept)
 	}
 
 	if err := j.r.store.SaveDecisions(ctx, anomalies); err != nil {
@@ -366,6 +371,7 @@ func (j *job) narrate(ctx context.Context) error {
 		return errAIUnavailable
 	}
 
+	j.stage(stage).CountIn = ptr(len(incidents))
 	generated := 0
 	for i, inc := range incidents {
 		in := NarrateInput{Incident: inc, Anomalies: byIncident[inc.ID]}

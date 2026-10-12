@@ -13,26 +13,65 @@ At startup the API applies the database schema, creates the private `logs`
 storage bucket if it is missing, and marks any job a previous process left
 running as stopped, so it can be resumed.
 
+## Database
+
+Postgres on Supabase. The schema is plain SQL in
+`internal/store/migrations/`, one numbered file per change. The API applies
+any file it has not run yet at startup and records it in the
+`schema_migrations` table. To change the schema, add `0002_<what>.sql`;
+never edit a file that has already run.
+
+There is no seed data. The demo comes from the sample logs below.
+
+## Demo samples
+
+The three demo logs and their answer keys live in a private storage bucket
+named `samples`, which keeps about 90 MB of generated files out of git and
+out of the server image.
+
+```sh
+make samples                  # from the repo root: generates ../samples
+go run ./cmd/uploadsamples    # from backend/: copies them to the bucket
+```
+
+Run both again whenever the generator changes. Set `SAMPLES_DIR` to read
+the files from a folder instead.
+
 ## Test it
 
 ```sh
-go test ./...                       # unit tests; database tests are skipped
+go test ./...                 # tests that need a database are skipped
 ```
 
-The database tests need a throwaway Postgres. They create a fresh schema
-per test and drop it afterwards, so they never touch real data.
+The database tests run against whatever `TEST_DATABASE_URL` points to. For
+this project that is the Supabase database. Each test creates its own
+schema, named `test_` plus eight random characters, and drops it when it
+ends, so the tests never see or touch the app's tables.
 
 ```sh
-docker run -d --name tenfold-db -p 127.0.0.1:54329:5432 \
-  -e POSTGRES_USER=tenfold -e POSTGRES_PASSWORD=tenfold -e POSTGRES_DB=tenfold postgres:17
-TEST_DATABASE_URL=postgres://tenfold:tenfold@localhost:54329/tenfold go test -race ./...
+TEST_DATABASE_URL="$(grep '^DATABASE_URL=' .env | cut -d= -f2-)" go test -p 1 ./...
 ```
+
+Expect a few minutes: the tests load the 48,000-line sample several times
+over the network. `-p 1` runs one package at a time, to stay under the
+session pooler's connection limit.
 
 Two kinds of test are skipped unless their input exists:
 
-- Tests that read the demo logs, until `make samples` has generated them.
+- Tests that read the demo logs from `../samples`, until `make samples`
+  has generated them.
 - `SUPABASE_STORAGE_TEST=1 go test ./internal/blob/` writes one small file
   to the real bucket in `.env` and deletes it.
+
+## Deploy
+
+Railway builds `Dockerfile` and runs the binary. It needs three variables:
+`DATABASE_URL`, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`. Railway sets
+`PORT` itself.
+
+```sh
+railway up                    # from backend/
+```
 
 ## How it fits together
 
@@ -46,7 +85,8 @@ Two kinds of test are skipped unless their input exists:
 | `internal/store` | Every SQL query. Each one filters by the calling user. |
 | `internal/blob` | Signed upload URLs and file reads in Supabase Storage. |
 | `internal/auth` | Verifies Supabase access tokens. |
-| `internal/samples` | Reads the demo logs and their answer keys. |
+| `internal/samples` | Reads the demo logs and their answer keys from the bucket. |
+| `cmd/uploadsamples` | Copies the generated demo logs into the bucket. |
 | `internal/zscaler` | Parses one log line. |
 
 ## Rules the code keeps
