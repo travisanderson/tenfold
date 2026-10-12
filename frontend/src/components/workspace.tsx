@@ -9,6 +9,8 @@ import { unwrap } from "@/lib/api/result";
 import { completedUpload } from "@/lib/fixtures";
 
 type Workspace = {
+  clearing: boolean;
+  setClearing: (value: boolean) => void;
   live?: LiveData;
   lessons: Schema["Lesson"][];
   setLessons: React.Dispatch<React.SetStateAction<Schema["Lesson"][]>>;
@@ -33,6 +35,7 @@ export function WorkspaceProvider({
   demo: boolean;
   initialData?: LiveData;
 }) {
+  const [clearing, setClearing] = useState(false);
   const [lessons, setLessons] = useState<Schema["Lesson"][]>([]);
   const [incidents, setIncidents] = useState<Incident[]>(
     initialData?.incidents ?? [],
@@ -84,6 +87,8 @@ export function WorkspaceProvider({
   return (
     <Context.Provider
       value={{
+        clearing,
+        setClearing,
         live: initialData,
         lessons,
         setLessons,

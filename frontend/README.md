@@ -9,6 +9,7 @@ Live mode is the default. The logo opens Triage; an account with no uploads land
 - Supabase cookie sessions are verified on the server and refreshed by Next.js Proxy. Sign out clears the session. Backend `401` responses lead to sign-in.
 - `src/lib/api/client.ts` is the server-only, typed `openapi-fetch` boundary. Server Components load screens and Server Actions perform mutations. The browser never calls the Go API directly.
 - `.log` files register as `text/plain`; `.csv` files register as `text/csv`. A browser PUT sends the file to the signed storage URL without an authorization header. Files are limited to 50 MB.
+- **Clear data**, beside Recent uploads, deletes all account uploads and their results after confirmation. It stops running jobs and returns to an empty Uploads screen. Saved lessons are kept unless “Also delete saved lessons” is selected. The account stays signed in.
 - Load demo data registers `attack-day` on the server. Progress passes through an authenticated SSE relay. Streams close on completion, error, or partial status; the client then reads the upload again. Interrupted streams offer Reconnect.
 - Demo samples deliberately pause for malformed lines. “Analyse the good lines” sends `acceptParseErrors: true`. The completed run shows skipped-line counts in Triage.
 - Triage uses incident summaries and 10-minute/hourly time series. Incident detail, notes, assignment, verdicts, and lesson previews use their contract endpoints.

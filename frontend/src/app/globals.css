@@ -1895,3 +1895,8 @@ tr:last-child td {
   margin: 24px 0;
   min-width: 0;
 }
+
+button.danger-button {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}

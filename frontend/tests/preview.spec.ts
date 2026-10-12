@@ -368,3 +368,26 @@ test("global search opens and filters loaded sample evidence", async ({
     page.getByRole("button", { name: "Open event e1049", exact: true }),
   ).toHaveCount(0);
 });
+
+test("clear data requires confirmation and returns to the empty upload screen", async ({
+  page,
+}) => {
+  await loadPreview(page, "/uploads");
+  await page.getByRole("button", { name: "Clear data", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Clear your data?" });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Cancel", exact: true }),
+  ).toBeFocused();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.locator(".recent-uploads tbody tr")).toHaveCount(1);
+  await page.getByRole("button", { name: "Clear data", exact: true }).click();
+  await dialog.getByLabel("Also delete saved lessons").check();
+  await dialog.getByRole("button", { name: "Clear data", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your investigation starts here." }),
+  ).toBeVisible();
+  await expect(page.locator(".recent-uploads tbody tr")).toHaveCount(0);
+  await page.getByRole("link", { name: "tenfold", exact: true }).click();
+  await expect(page).toHaveURL(/\/uploads$/);
+});

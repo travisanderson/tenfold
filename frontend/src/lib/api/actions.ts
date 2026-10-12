@@ -1,4 +1,6 @@
 "use server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { serverApi, result } from "./server";
 import type { Schema } from "@/lib/types";
 import type { operations } from "./schema";
@@ -112,4 +114,13 @@ export async function uploadPage(cursor: string) {
   return result(
     await api.GET("/v1/uploads", { params: { query: { cursor, limit: 100 } } }),
   );
+}
+
+export async function clearData(includeLessons: boolean) {
+  const api = await serverApi();
+  const { clearWorkspaceData } = await import("./clear-data");
+  const cleared = await clearWorkspaceData(api, includeLessons === true);
+  if (cleared.error) return cleared;
+  revalidatePath("/", "layout");
+  redirect("/uploads");
 }

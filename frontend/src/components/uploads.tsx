@@ -12,6 +12,7 @@ import {
 import { useWorkspace } from "./workspace";
 import { Pipeline } from "./pipeline";
 import type { Upload } from "@/lib/types";
+import { ClearDataDialog } from "./clear-data-dialog";
 import { LiveUploadState } from "./live-upload-state";
 import {
   registerUpload,
@@ -33,6 +34,7 @@ export function Uploads() {
     live,
   } = useWorkspace();
   const router = useRouter();
+  const [clearing, setClearing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [nextCursor, setNextCursor] = useState(live?.nextUploadCursor);
@@ -293,7 +295,16 @@ export function Uploads() {
           </small>
         </section>
         <section className="panel recent-uploads">
-          <h3>Recent uploads</h3>
+          <div className="section-heading">
+            <h3>Recent uploads</h3>
+            <button
+              className="small-button"
+              disabled={busy}
+              onClick={() => setClearing(true)}
+            >
+              Clear data
+            </button>
+          </div>
           <div className="table-scroll">
             <table>
               <thead>
@@ -357,6 +368,14 @@ export function Uploads() {
         <p role="alert" className="notice">
           {error}
         </p>
+      )}
+      {clearing && (
+        <ClearDataDialog
+          close={() => {
+            setClearing(false);
+            if (!demo) router.refresh();
+          }}
+        />
       )}
       {demo && (
         <footer className="page-footer">

@@ -7,18 +7,19 @@ import type { Schema } from "@/lib/types";
 import { useWorkspace } from "./workspace";
 
 export function UploadProgress() {
-  const { uploads, setUploads, demo } = useWorkspace();
+  const { uploads, setUploads, demo, clearing } = useWorkspace();
   const router = useRouter();
   const pathname = usePathname();
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const ids = demo
-    ? ""
-    : uploads
-        .filter((u) => u.status === "processing")
-        .map((u) => u.id)
-        .sort()
-        .join(",");
+  const ids =
+    demo || clearing
+      ? ""
+      : uploads
+          .filter((u) => u.status === "processing")
+          .map((u) => u.id)
+          .sort()
+          .join(",");
   useEffect(() => {
     if (!ids) return;
     let disposed = false;
