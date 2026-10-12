@@ -8,7 +8,7 @@ GENERATED := \
 	backend/internal/api/openapi.gen.yaml \
 	frontend/src/lib/api/schema.d.ts
 
-.PHONY: lint generate generate-go generate-ts check-drift samples test
+.PHONY: lint generate generate-go generate-ts check-drift samples holdout test
 
 lint:
 	npm run -s lint:api
@@ -25,6 +25,13 @@ generate-ts:
 # The samples folder, generator included, is kept out of version control.
 samples:
 	cd samples && $(GO) run ./loggen --all --seed 42
+
+# Writes a day the detectors were not built against: the same scenarios,
+# with users, times, sizes, hosts and intervals drawn from the seed. It
+# lives in its own folder, apart from the demos. Score it with
+# `cd backend && go test ./internal/detect -run TestHoldout -v`.
+holdout:
+	cd samples && $(GO) run ./loggen --profile holdout --seed 20261012 --out holdout
 
 test:
 	cd backend && $(GO) test ./...

@@ -39,6 +39,11 @@ go run ./cmd/uploadsamples    # from backend/: copies them to the bucket
 Run both again whenever the generator changes. Set `SAMPLES_DIR` to read
 the files from a folder instead.
 
+`make holdout` writes a fourth log to `samples/holdout/`: the same scenarios
+with users, times, sizes, hosts and intervals drawn at random. It is not a
+demo. `go test ./internal/detect -run TestHoldout -v` scores the detectors
+on it and asserts nothing; a miss there is a finding, not a bug to tune out.
+
 ## Test it
 
 ```sh

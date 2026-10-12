@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -22,7 +23,8 @@ import (
 	"tenfold/backend/internal/zscaler"
 )
 
-const samplesDir = "../../../samples"
+// SAMPLES_DIR points the tests at another set, such as the holdout.
+var samplesDir = cmp.Or(os.Getenv("SAMPLES_DIR"), "../../../samples")
 
 var ctx = context.Background()
 

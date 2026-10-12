@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -26,7 +27,12 @@ var samplesDir = cmp.Or(os.Getenv("SAMPLES_DIR"), "../../../samples")
 
 func loadSample(t *testing.T, name string) ([]model.Event, samples.AnswerKey) {
 	t.Helper()
-	f, err := os.Open(filepath.Join(samplesDir, name+".log"))
+	return loadSampleFrom(t, samplesDir, name)
+}
+
+func loadSampleFrom(t *testing.T, dir, name string) ([]model.Event, samples.AnswerKey) {
+	t.Helper()
+	f, err := os.Open(filepath.Join(dir, name+".log"))
 	if err != nil {
 		t.Skipf("sample %s is not generated: %v", name, err)
 	}
@@ -42,7 +48,7 @@ func loadSample(t *testing.T, name string) ([]model.Event, samples.AnswerKey) {
 	}
 	sort.SliceStable(events, func(i, j int) bool { return events[i].TS.Before(events[j].TS) })
 
-	key, err := samples.NewCatalog(samples.Dir(samplesDir)).AnswerKey(context.Background(), name)
+	key, err := samples.NewCatalog(samples.Dir(dir)).AnswerKey(context.Background(), name)
 	if err != nil {
 		t.Fatalf("answer key: %v", err)
 	}
@@ -125,6 +131,96 @@ func TestCleanDayRaisesNothingButTheDecoys(t *testing.T) {
 				g.Anomalies[0].User, g.RiskScore)
 		}
 	}
+}
+
+// TestHoldout scores the detectors on the holdout sample: the demo's seven
+// scenarios with their users, times, sizes, hosts and intervals drawn at
+// random (`make holdout`). The detectors were not built against that file.
+//
+// It prints a scorecard and asserts nothing. A miss here is a finding to
+// report. Changing a detector until this passes would make the holdout one
+// more sample the detectors were built for.
+func TestHoldout(t *testing.T) {
+	events, key := loadSampleFrom(t, filepath.Join(samplesDir, "holdout"), "holdout")
+	anomalies := Run(uuid.New(), events)
+	groups := GroupAnomalies(anomalies)
+
+	// The scoring rule in samples/README.md: an attack is caught when a
+	// raised group holds at least half its lines. A raised group that
+	// catches no attack is a false positive, decoy or not.
+	caughtBy := map[string]bool{}
+	raised, decoys, unexplained := 0, 0, 0
+	for _, g := range groups {
+		if g.RiskScore < threshold {
+			continue
+		}
+		raised++
+		match := ""
+		for _, s := range key.Scenarios {
+			if s.Malicious() && coverage(g, s) >= 0.5 {
+				caughtBy[s.ID] = true
+				match = "catches " + s.ID
+			}
+		}
+		if match == "" {
+			match = "false positive, matches nothing planted"
+			for _, s := range key.Scenarios {
+				if !s.Malicious() && (coverage(g, s) >= 0.5 || madeOf(g, s) >= 0.5) {
+					match = "false positive, the decoy " + s.ID
+				}
+			}
+			if strings.HasSuffix(match, "planted") {
+				unexplained++
+			} else {
+				decoys++
+			}
+		}
+		t.Logf("raised  %3d %-8s %-12s %d anomalies, %d events, %v: %s",
+			g.RiskScore, Severity(g.RiskScore), g.Anomalies[0].User, len(g.Anomalies), len(g.LineNos), signalNames(g), match)
+	}
+
+	attacks, caught := 0, 0
+	for _, s := range key.Scenarios {
+		if !s.Malicious() {
+			continue
+		}
+		attacks++
+		if caughtBy[s.ID] {
+			caught++
+			continue
+		}
+		t.Logf("MISSED  %s", s.ID)
+		// Say how close the detectors came.
+		touched := false
+		for _, g := range groups {
+			if share := coverage(g, s); share > 0 {
+				touched = true
+				t.Logf("        a group scoring %d holds %.0f%% of its lines: %v", g.RiskScore, 100*share, signalNames(g))
+			}
+		}
+		if !touched {
+			t.Logf("        no detector flagged any of its %d lines", len(s.LineNos))
+		}
+	}
+	t.Logf("%d events -> %d anomalies -> %d groups -> %d at or above %d",
+		len(events), len(anomalies), len(groups), raised, threshold)
+	t.Logf("attacks caught: %d of %d. false positives: %d (%d decoys, %d matching nothing planted)",
+		caught, attacks, decoys+unexplained, decoys, unexplained)
+}
+
+// madeOf is the share of a group's evidence that belongs to a scenario.
+func madeOf(g Group, s samples.Scenario) float64 {
+	in := map[int]bool{}
+	for _, n := range s.LineNos {
+		in[n] = true
+	}
+	hit := 0
+	for _, n := range g.LineNos {
+		if in[n] {
+			hit++
+		}
+	}
+	return float64(hit) / float64(len(g.LineNos))
 }
 
 func TestRunIsDeterministic(t *testing.T) {
