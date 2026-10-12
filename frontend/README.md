@@ -35,7 +35,7 @@ At phone width, evidence, graph, chart, timeline, and notes collapse. The upload
 
 Set `TENFOLD_FIXTURE_MODE=true` and restart Next.js to use the original design preview without sign-in. It starts empty; Load demo data creates three sample incidents. Changes stay in memory and reset on refresh. `/states` is available only in this mode. Live mode never substitutes fixture results for an API failure.
 
-For independent contract checks, `npm run mock:api` starts Prism on http://127.0.0.1:4010. `npm run mock:check` checks its responses and request validation.
+Prism and its mock scripts have been removed. The fixture preview runs in memory without a mock server. Use the live browser tests below to check the frontend integration; these do not replace standalone contract validation.
 
 ## Checks
 

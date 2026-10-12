@@ -10,9 +10,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "mock:api": "prism mock ../api/openapi.yaml --host 127.0.0.1 --port 4010",
-    "mock:check": "node scripts/check-mock.mjs",
-    "format": "prettier --write src tests scripts *.ts *.mjs"
+    "format": "prettier --write src tests *.ts *.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.2.0",
@@ -33,7 +31,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
-    "@stoplight/prism-cli": "^5.16.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
