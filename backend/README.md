@@ -121,29 +121,51 @@ See `.env.example`.
 | `Judge` | once per anomaly in a group that reached the threshold | likely malicious, likely benign, or inconclusive? |
 | `Narrator` | once per incident | what happened, in sentences that cite events |
 
-- `mock` (the default) labels by risk score and writes the template text.
-  It needs no key and costs nothing, so tests and offline demos use it.
-- `claude` calls the Anthropic API (`internal/pipeline/claude.go`) and needs
-  `ANTHROPIC_API_KEY`. The judge defaults to `claude-haiku-5-5`, the
-  narrator to `claude-opus-5-5`. The mock judge runs beside Claude as a
-  shadow, so the scorecard can compare the two.
-- `none` runs no AI. The upload ends as `partial` with `ai_unavailable`.
+| `AI_PROVIDER` | Judge | Narrator | Shadow judge | Keys |
+| --- | --- | --- | --- | --- |
+| `jev` | Jev | Claude | Claude | `JEV_API_KEY`, `ANTHROPIC_API_KEY` |
+| `claude` | Claude | Claude | mock | `ANTHROPIC_API_KEY` |
+| `mock` (default) | mock | mock | none | none |
+| `none` | none | none | none | none |
 
-What the model is shown: the detector's finding, its measurements, and a
+- **Jev** (`internal/pipeline/jev.go`) is TypeSafe's decision model. It
+  does not write text. It reads the facts and one typed question, malicious
+  or benign, and returns its choice with a confidence, in about 0.2
+  seconds. Below a confidence of 0.5 the code, not the model, calls the
+  anomaly inconclusive. Jev cannot narrate, so Claude does.
+- **Claude** (`internal/pipeline/claude.go`) judges with `claude-haiku-5-5`
+  and narrates with `claude-opus-5-5`. Both return JSON that follows a
+  schema.
+- **The mock** labels by risk score and writes the template text. It needs
+  no key and costs nothing, so tests and offline demos use it.
+- **A shadow judge** rules on the same anomalies as the judge. Its rulings
+  are saved for the scorecard and change nothing.
+- With `none`, the upload ends as `partial` with `ai_unavailable`.
+
+What a model is shown: the detector's finding, its measurements, and a
 sample of normalized events, 12 per anomaly. It is not shown the raw log
 line, the risk score or the signal weights; the judge is a second opinion
-and should not be anchored on the first.
+and should not be anchored on the first. Jev and Claude get the same facts.
+
+To see how the real judges rule on a demo sample, beside the answer key:
+
+```sh
+LIVE_AI=1 JEV_API_KEY=... ANTHROPIC_API_KEY=... \
+  go test ./internal/pipeline/ -run TestLiveJudges -v
+```
+
+It calls paid APIs, so it never runs unless `LIVE_AI` is set.
 
 What the model cannot do:
 
 - Change a risk score, or set aside a group that scores 65 or more.
 - Put an uncited sentence in front of the analyst. A draft that cites an
   event outside the incident is replaced by the template.
-- Stop the job. If Claude cannot be reached, the upload ends as `partial`
+- Stop the job. If a model cannot be reached, the upload ends as `partial`
   with scores and evidence complete. If it declines or returns something
   unusable, the anomaly is marked `inconclusive`, or the incident gets the
   template.
 
 Log fields such as the URL and the user agent are written by whoever made
-the request. Both prompts tell the model to treat them as data, never as
+the request. Every prompt tells the model to treat them as data, never as
 instructions, and the limits above hold even if it does not.

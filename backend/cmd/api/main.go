@@ -83,10 +83,16 @@ func run(log *slog.Logger) error {
 	}
 
 	ai := pipeline.NewAI(cfg.AIProvider)
-	if cfg.AIProvider == "claude" {
+	if cfg.AIProvider == "claude" || cfg.AIProvider == "jev" {
 		ai = pipeline.NewClaudeAI(cfg.AnthropicAPIKey,
 			cmp.Or(cfg.JudgeModel, pipeline.DefaultJudgeModel),
 			cmp.Or(cfg.NarrativeModel, pipeline.DefaultNarrativeModel))
+	}
+	if cfg.AIProvider == "jev" {
+		// Jev takes the judge's seat. Claude's judge moves to the shadow,
+		// so every anomaly gets both rulings and the scorecard compares them.
+		ai.Shadow = ai.Judge
+		ai.Judge = pipeline.NewJevJudge(cfg.JevAPIKey, cmp.Or(cfg.JevModel, pipeline.DefaultJevModel))
 	}
 
 	hub := pipeline.NewHub()

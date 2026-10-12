@@ -154,8 +154,14 @@ var providerLabels = map[api.DecisionProvider]string{
 }
 
 // providerCostPer1k is the cost in US dollars per 1,000 decisions. The
-// stand-ins cost nothing; real providers fill this in when they arrive.
-var providerCostPer1k = map[api.DecisionProvider]float64{}
+// stand-ins cost nothing. A decision does not record its tokens, so each
+// figure here is an average measured with TestLiveJudges.
+//
+// Jev: 3,392 input tokens a decision on attack-day (11 Oct 2026), at $0.042
+// per million; output is free. Claude is not measured yet.
+var providerCostPer1k = map[api.DecisionProvider]float64{
+	api.DecisionProviderJev: 0.14,
+}
 
 // tally adds up one provider's decisions.
 type tally struct {

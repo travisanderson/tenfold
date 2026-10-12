@@ -31,6 +31,7 @@ type fakeClaude struct {
 
 type claudeRequest struct {
 	Beta   string // the anthropic-beta header
+	Raw    string // the body as sent
 	Model  string `json:"model"`
 	System []struct {
 		Text string `json:"text"`
@@ -72,7 +73,7 @@ func newFakeClaude(t *testing.T, reply func(claudeRequest) (int, string)) (*fake
 		if err := json.Unmarshal(raw, &req); err != nil {
 			t.Errorf("request body: %v", err)
 		}
-		req.Beta = r.Header.Get("anthropic-beta")
+		req.Beta, req.Raw = r.Header.Get("anthropic-beta"), string(raw)
 		fake.mu.Lock()
 		fake.requests = append(fake.requests, req)
 		fake.mu.Unlock()
@@ -234,6 +235,61 @@ func TestClaudeNarratorWritesACitedDraft(t *testing.T) {
 		if !strings.Contains(req.facts(), want) {
 			t.Errorf("the narrator was not shown %q", want)
 		}
+	}
+	// The model answers in schema order: the account, then its summary.
+	if !inOrder(req.Raw, `"sentences"`, `"summary"`, `"nextSteps"`) {
+		t.Error("the schema does not list sentences, summary, nextSteps in that order")
+	}
+}
+
+func TestClaudeJudgeSchemaAsksForTheLabelFirst(t *testing.T) {
+	fake, ai := newFakeClaude(t, func(req claudeRequest) (int, string) {
+		return 200, message(req.Model, "end_turn", `{"label":"inconclusive","confidence":0.5}`)
+	})
+	in, _ := exfilCase()
+	if _, err := ai.Judge.Decide(context.Background(), in); err != nil {
+		t.Fatal(err)
+	}
+	schema := fake.requests[0].Raw[strings.Index(fake.requests[0].Raw, `"output_config"`):]
+	if !inOrder(schema, `"label"`, `"confidence"`) {
+		t.Errorf("the schema does not ask for the label before the confidence: %s", schema)
+	}
+}
+
+// inOrder reports whether the parts appear in s one after another.
+func inOrder(s string, parts ...string) bool {
+	for _, part := range parts {
+		i := strings.Index(s, part)
+		if i < 0 {
+			return false
+		}
+		s = s[i+len(part):]
+	}
+	return true
+}
+
+func TestClaudeNarratorAsksAgainWhenTheAccountIsEmpty(t *testing.T) {
+	empty := `{"sentences":[],"summary":"","nextSteps":[]}`
+	full := `{"sentences":[{"text":"dana.k sent 41.0 MB.","citations":["e31877"]}],"summary":"A transfer.","nextSteps":[]}`
+	_, in := exfilCase()
+
+	fake, ai := newFakeClaude(t, nil)
+	fake.reply = func(req claudeRequest) (int, string) {
+		if len(fake.requests) == 1 {
+			return 200, message(req.Model, "end_turn", empty)
+		}
+		return 200, message(req.Model, "end_turn", full)
+	}
+	draft, err := ai.Narrator.Narrate(context.Background(), in)
+	if err != nil || len(draft.Sentences) != 1 || len(fake.requests) != 2 {
+		t.Errorf("empty then full: %d sentences, err %v, %d requests", len(draft.Sentences), err, len(fake.requests))
+	}
+
+	fake, ai = newFakeClaude(t, func(req claudeRequest) (int, string) {
+		return 200, message(req.Model, "end_turn", empty)
+	})
+	if _, err := ai.Narrator.Narrate(context.Background(), in); !errors.Is(err, errNoAnswer) || len(fake.requests) != narrateAttempts {
+		t.Errorf("always empty: err %v after %d requests", err, len(fake.requests))
 	}
 }
 

@@ -35,12 +35,20 @@ type Config struct {
 	// pool must stay well under it.
 	DBMaxConns int
 
-	// AIProvider picks the decision and narrative provider: "claude",
-	// "mock" or "none". Claude needs AnthropicAPIKey. The two models are
+	// AIProvider picks who judges and who narrates:
+	//
+	//	jev     Jev judges, Claude narrates, Claude judges in shadow
+	//	claude  Claude judges and narrates, the mock judges in shadow
+	//	mock    the offline stand-in does both
+	//	none    no AI
+	//
+	// "jev" needs both keys; "claude" needs AnthropicAPIKey. The models are
 	// optional; empty means the pipeline's defaults.
 	AIProvider      string
 	AnthropicAPIKey string
-	JudgeModel      string
+	JevAPIKey       string
+	JevModel        string
+	JudgeModel      string // Claude's, when Claude judges
 	NarrativeModel  string
 
 	RiskThreshold int
@@ -60,6 +68,8 @@ func Load() (Config, error) {
 		SamplesDir:         os.Getenv("SAMPLES_DIR"),
 		AIProvider:         env("AI_PROVIDER", "mock"),
 		AnthropicAPIKey:    os.Getenv("ANTHROPIC_API_KEY"),
+		JevAPIKey:          os.Getenv("JEV_API_KEY"),
+		JevModel:           os.Getenv("JEV_MODEL"),
 		JudgeModel:         os.Getenv("AI_JUDGE_MODEL"),
 		NarrativeModel:     os.Getenv("AI_NARRATIVE_MODEL"),
 	}
@@ -79,12 +89,15 @@ func Load() (Config, error) {
 	}
 	switch c.AIProvider {
 	case "mock", "none":
-	case "claude":
+	case "claude", "jev":
 		if c.AnthropicAPIKey == "" {
-			problems = append(problems, "ANTHROPIC_API_KEY is required when AI_PROVIDER is claude")
+			problems = append(problems, fmt.Sprintf("ANTHROPIC_API_KEY is required when AI_PROVIDER is %s", c.AIProvider))
+		}
+		if c.AIProvider == "jev" && c.JevAPIKey == "" {
+			problems = append(problems, "JEV_API_KEY is required when AI_PROVIDER is jev")
 		}
 	default:
-		problems = append(problems, fmt.Sprintf("AI_PROVIDER %q is not claude, mock or none", c.AIProvider))
+		problems = append(problems, fmt.Sprintf("AI_PROVIDER %q is not jev, claude, mock or none", c.AIProvider))
 	}
 	threshold, err := strconv.Atoi(env("RISK_THRESHOLD", "30"))
 	if err != nil || threshold < 0 || threshold > 100 {

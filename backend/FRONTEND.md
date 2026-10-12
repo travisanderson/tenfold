@@ -137,7 +137,8 @@ judging runs, its entry has `countIn` and `processed` ("judging 132 of
   `shadowDecision` is absent, and `judgeAgreement.total` is 0, so the "two
   judges" view has one judge. With `claude`, the providers are `claude`,
   `decision.model` names the model, and `shadowDecision` holds the mock
-  judge's ruling. A narrative whose `status` is `template` has the provider
+  judge's ruling. With `jev`, `decision.provider` is `jev`,
+  `shadowDecision.provider` is `claude`, and narratives come from `claude`. A narrative whose `status` is `template` has the provider
   `rules`, whatever the server runs. Draw what the fields say; never
   assume a provider.
 - **Absent means absent.** Optional fields are left out, never `null`.
