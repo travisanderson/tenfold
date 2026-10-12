@@ -72,11 +72,19 @@ Two kinds of test are skipped unless their input exists:
 
 ## Evaluation
 
-The detectors were scored on 50 holdout days (seeds 101 to 150, on
-12 October 2026). No model ran, and nothing was tuned to the result. An
-attack counts as caught when a group at or above the threshold of 30 holds
-at least half of its lines. A decoy counts as raised when a group at or
-above the threshold is made of it.
+Every number here comes from one run: 50 holdout days, seeds 101 to 150,
+scored on 12 October 2026. Its full output is in
+[`eval/holdout-sweep.txt`](eval/holdout-sweep.txt).
+
+A holdout day plays the demo's seven scenarios with their users, times,
+sizes, hosts and intervals drawn at random. Only the detectors ran. No model
+was called, and no detector, threshold or prompt was changed in response.
+
+An attack counts as caught when a group at or above the threshold of 30
+holds at least half of its lines. A decoy counts as raised when such a group
+is made of it.
+
+**The detectors caught 161 of 200 attacks.**
 
 | Scenario | Result |
 | --- | --- |
@@ -91,7 +99,23 @@ above the threshold is made of it.
 Nothing was raised that the generator did not plant. The median day raised
 5 groups.
 
-The beacon is the weak rule, and the interval is not what decides it:
+### The beacon rule has two blind spots
+
+The rule needs 30 calls to one host before it looks for a rhythm, and then
+it wants 80% of the gaps within 10% of the median gap. So it misses:
+
+1. **A beacon that makes fewer than 30 calls in a day.**
+2. **A beacon whose timing varies by more than 10%.** Real malware adds
+   timing variation on purpose, so this is the larger gap.
+
+| Beacon drawn | Caught |
+| --- | --- |
+| Fewer than 30 calls in the day | 0 of 16 |
+| 30 or more, timing varies by under 10% of the beat | 11 of 12 |
+| 30 or more, timing varies by 10% or more | 0 of 22 |
+
+The interval alone does not decide it. Fast beacons were missed about as
+often as slow ones:
 
 | Beacon interval | Caught |
 | --- | --- |
@@ -100,35 +124,43 @@ The beacon is the weak rule, and the interval is not what decides it:
 | 5 to 15 minutes | 4 of 13 |
 | 15 to 30 minutes | 2 of 16 |
 
-| What decides it | Caught |
-| --- | --- |
-| Fewer than 30 calls in the day | 0 of 16 |
-| 30 or more, timing off the beat by under 10% | 11 of 12 |
-| 30 or more, timing off the beat by 10% or more | 0 of 22 |
+Proposed fix, not built: a rhythm test that tolerates jitter and counts
+calls across several days, validated on seeds it has not seen.
 
-What the numbers do and do not say:
+### A fast update agent floods the list
 
-- **The beacon rule has two blind spots.** It needs 30 calls to one host
-  before it looks for a rhythm, and it wants 80% of the gaps within 10% of
-  the median. A beacon that is slow, or that varies its timing, goes
-  unflagged at any speed.
-- **A fast update agent floods the list.** The agent was raised on all 4
-  days it polled every 5 minutes, once per workstation: 74 groups.
+The benign agent polls its vendor from every workstation. On the 4 days it
+polled every 5 minutes, the detectors raised a group per workstation: 74
+groups in all, and up to 21 on one day, which made that day's list 27 groups
+long. On the 46 days it polled every 10 minutes or slower, it was never
+raised.
+
+Proposed fix, not built: group by destination, so that fleet-wide polling to
+one host becomes a single finding.
+
+### What the numbers do not say
+
 - **These are detector results, before the judge.** On the demo the judge
   sets the code push aside. The backup scores above the judge's limit and
   stays, by design; a lesson is the answer to it.
-- **The rates depend on the ranges** in `samples/loggen/script.go`, which
-  were chosen by the same person who wrote the detectors. The blind spots
-  are the finding; the percentages are not field rates.
+- **They are not field rates.** They depend on the ranges in
+  `samples/loggen/script.go`, chosen by the same person who wrote the
+  detectors. The blind spots are the finding.
+- **The system does not learn from verdicts yet.** Verdicts are stored with
+  their signals. The next step is precedents, which show the judge past
+  verdicts on similar anomalies, then learned weights once there are enough
+  labels.
 
-To run it again, from the repo root:
+### Run it again
 
 ```sh
-for seed in $(seq 101 150); do
-  (cd samples && go run ./loggen --profile holdout --seed $seed --out /tmp/holdout-set/holdout)
-  (cd backend && SAMPLES_DIR=/tmp/holdout-set go test ./internal/detect -run TestHoldout -v -count=1)
-done
+make holdout-sweep            # from the repo root; about 20 seconds
 ```
+
+It generates the 50 days, scores them, and rewrites `eval/holdout-sweep.txt`.
+The same code gives the same bytes, so `git diff` shows whether anything
+moved. `scripts/holdout-sweep.sh 201 260` scores another range. Both need
+the generator in `samples/loggen`, which is kept out of version control.
 
 ## Deploy
 

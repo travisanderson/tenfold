@@ -1,0 +1,86 @@
+Holdout sweep: seeds 101 to 150, 50 days, detectors only, threshold 30
+
+Attacks caught: 161 of 200
+  atk-exfil       caught on 50 of 50 days
+  atk-phish       caught on 50 of 50 days
+  atk-burst       caught on 50 of 50 days
+  atk-beacon      caught on 11 of 50 days
+
+Decoys raised:
+  decoy-backup    raised on 50 of 50 days; 50 groups in all, at most 1 on one day
+  decoy-dev-push  raised on 48 of 50 days; 48 groups in all, at most 1 on one day
+  decoy-updater   raised on 4 of 50 days; 74 groups in all, at most 21 on one day
+
+Groups raised that match nothing planted: 0
+Groups raised per day: median 5, least 4, most 27
+
+Beacon, by the interval drawn:
+  under 1 minute    caught 1 of 8
+  1 to 5 minutes    caught 4 of 13
+  5 to 15 minutes   caught 4 of 13
+  15 to 30 minutes  caught 2 of 16
+
+Beacon, by what the rule needs:
+  fewer than 30 calls in the day                       caught 0 of 16
+  30 or more, timing varies by under 10% of the beat   caught 11 of 12
+  30 or more, timing varies by 10% or more             caught 0 of 22
+
+Update agent, by how often it polls:
+  every  5 minutes   raised on 4 of 4 days
+  every 10 minutes   raised on 0 of 12 days
+  every 15 minutes   raised on 0 of 9 days
+  every 20 minutes   raised on 0 of 10 days
+  every 30 minutes   raised on 0 of 11 days
+  every 60 minutes   raised on 0 of 4 days
+
+Each day:
+seed 101: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 18 calls, every 1072s, give or take 174s; agent polls every 1800s
+seed 102: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 85 calls, every 195s, give or take 15s; agent polls every 1800s
+seed 103: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 22 calls, every 1205s, give or take 14s; agent polls every 1800s
+seed 104: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 70 calls, every 511s, give or take 43s; agent polls every 1200s
+seed 105: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 21 calls, every 1523s, give or take 247s; agent polls every 600s
+seed 106: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 78 calls, every 449s, give or take 4s; agent polls every 1800s
+seed 107: raised  4; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 0; decoy-updater 0; beacon 25 calls, every 690s, give or take 31s; agent polls every 1200s
+seed 108: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 383 calls, every 53s, give or take 3s; agent polls every 1200s
+seed 109: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 252 calls, every 77s, give or take 9s; agent polls every 3600s
+seed 110: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 514 calls, every 32s, give or take 7s; agent polls every 1800s
+seed 111: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 12 calls, every 1610s, give or take 376s; agent polls every 900s
+seed 112: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 458 calls, every 61s, give or take 13s; agent polls every 1800s
+seed 113: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 92 calls, every 138s, give or take 15s; agent polls every 600s
+seed 114: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 42 calls, every 642s, give or take 71s; agent polls every 600s
+seed 115: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 365 calls, every 41s, give or take 7s; agent polls every 600s
+seed 116: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 287 calls, every 84s, give or take 3s; agent polls every 1800s
+seed 117: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 136 calls, every 181s, give or take 12s; agent polls every 1200s
+seed 118: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 33 calls, every 1070s, give or take 53s; agent polls every 900s
+seed 119: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 41 calls, every 656s, give or take 83s; agent polls every 600s
+seed 120: raised  4; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 0; decoy-updater 0; beacon 143 calls, every 90s, give or take 11s; agent polls every 900s
+seed 121: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 23 calls, every 1107s, give or take 132s; agent polls every 1200s
+seed 122: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 12 calls, every 1214s, give or take 284s; agent polls every 3600s
+seed 123: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 469 calls, every 72s, give or take 13s; agent polls every 1200s
+seed 124: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 67 calls, every 456s, give or take 57s; agent polls every 1200s
+seed 125: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 336 calls, every 43s, give or take 9s; agent polls every 1800s
+seed 126: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 19 calls, every 1164s, give or take 214s; agent polls every 1800s
+seed 127: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 556 calls, every 56s, give or take 5s; agent polls every 900s
+seed 128: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 840 calls, every 31s, give or take 5s; agent polls every 900s
+seed 129: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 184 calls, every 88s, give or take 14s; agent polls every 900s
+seed 130: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 17 calls, every 1241s, give or take 90s; agent polls every 1800s
+seed 131: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 37 calls, every 659s, give or take 154s; agent polls every 900s
+seed 132: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 137 calls, every 193s, give or take 21s; agent polls every 600s
+seed 133: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 5 calls, every 1725s, give or take 45s; agent polls every 600s
+seed 134: raised 22; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 16; beacon 103 calls, every 336s, give or take 4s; agent polls every 300s
+seed 135: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 50 calls, every 322s, give or take 35s; agent polls every 3600s
+seed 136: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 467 calls, every 49s, give or take 6s; agent polls every 600s
+seed 137: raised 27; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 21; beacon 49 calls, every 411s, give or take 1s; agent polls every 300s
+seed 138: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 38 calls, every 378s, give or take 90s; agent polls every 1800s
+seed 139: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 146 calls, every 207s, give or take 31s; agent polls every 600s
+seed 140: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 19 calls, every 1024s, give or take 141s; agent polls every 1200s
+seed 141: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 489 calls, every 46s, give or take 11s; agent polls every 600s
+seed 142: raised 23; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 17; beacon 32 calls, every 1106s, give or take 3s; agent polls every 300s
+seed 143: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 63 calls, every 380s, give or take 57s; agent polls every 3600s
+seed 144: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 15 calls, every 1080s, give or take 26s; agent polls every 900s
+seed 145: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 14 calls, every 953s, give or take 144s; agent polls every 1200s
+seed 146: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 20 calls, every 910s, give or take 157s; agent polls every 900s
+seed 147: raised 25; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 20; beacon 24 calls, every 493s, give or take 71s; agent polls every 300s
+seed 148: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 11 calls, every 1582s, give or take 28s; agent polls every 1200s
+seed 149: raised  6; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon caught; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 146 calls, every 247s, give or take 22s; agent polls every 600s
+seed 150: raised  5; atk-exfil caught; atk-phish caught; atk-burst caught; atk-beacon MISSED; decoy-backup 1; decoy-dev-push 1; decoy-updater 0; beacon 49 calls, every 215s, give or take 37s; agent polls every 600s

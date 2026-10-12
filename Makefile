@@ -8,7 +8,7 @@ GENERATED := \
 	backend/internal/api/openapi.gen.yaml \
 	frontend/src/lib/api/schema.d.ts
 
-.PHONY: lint generate generate-go generate-ts check-drift samples holdout test
+.PHONY: lint generate generate-go generate-ts check-drift samples holdout holdout-sweep test
 
 lint:
 	npm run -s lint:api
@@ -32,6 +32,12 @@ samples:
 # `cd backend && go test ./internal/detect -run TestHoldout -v`.
 holdout:
 	cd samples && $(GO) run ./loggen --profile holdout --seed 20261012 --out holdout
+
+# Scores the detectors on holdout seeds 101 to 150 and rewrites
+# backend/eval/holdout-sweep.txt, the source of the numbers in
+# backend/README.md. No model is called.
+holdout-sweep:
+	scripts/holdout-sweep.sh
 
 test:
 	cd backend && $(GO) test ./...
