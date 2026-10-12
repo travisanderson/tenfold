@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { readUpload } from "@/lib/api/actions";
+import { isJobFailure } from "@/lib/api/progress-stream";
 import { unwrap } from "@/lib/api/result";
 import type { Schema } from "@/lib/types";
 import { useWorkspace } from "./workspace";
@@ -77,7 +78,10 @@ export function UploadProgress() {
       }
       source.addEventListener("progress", progress);
       source.addEventListener("done", () => void finish());
-      source.addEventListener("error", () => void finish(true));
+      source.addEventListener(
+        "error",
+        (event) => void finish(!isJobFailure(event)),
+      );
       return source;
     });
     return () => {

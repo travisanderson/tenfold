@@ -173,8 +173,14 @@ export interface paths {
          *     | Event | Data | Meaning |
          *     | --- | --- | --- |
          *     | `progress` | `ProgressEvent` JSON | A stage started or a count changed. |
+         *     | `progress` | `ProgressEvent` JSON, `status: partial` | The job stopped early and can be resumed. This is the last event. The server closes the stream. |
          *     | `done` | `ProgressEvent` JSON, `status: completed` | The job finished. The server closes the stream. |
          *     | `error` | `Problem` JSON | The job failed. The server closes the stream. |
+         *
+         *     The stream ends when the job is no longer `queued` or `processing`.
+         *     Treat any event whose status is `completed`, `partial` or `failed` as
+         *     the last one, and close the connection; a browser `EventSource`
+         *     reconnects if you do not.
          *
          *     Example frame (`pipeline` left out for brevity):
          *

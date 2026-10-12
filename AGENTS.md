@@ -8,4 +8,3 @@ To quickly understand the overall project plan, read DESIGN.md here in the root 
 
 ## Notes for later
 
-- **Spec gap, progress stream.** `streamUploadProgress` defines `progress`, `done` and `error`, but nothing for a job that stops as `partial`. Today the API sends a last `progress` event with `status: partial` and closes the stream. Add that to the spec description.
