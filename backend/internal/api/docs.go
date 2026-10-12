@@ -1,9 +1,6 @@
 package api
 
-import (
-	_ "embed"
-	"net/http"
-)
+import _ "embed"
 
 //go:embed openapi.gen.yaml
 var specYAML []byte
@@ -26,14 +23,8 @@ const docsHTML = `<!doctype html>
 </html>
 `
 
-// SpecHandler serves the OpenAPI contract at /openapi.yaml.
-func SpecHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/yaml")
-	_, _ = w.Write(specYAML)
-}
+// Spec returns the OpenAPI contract, as YAML.
+func Spec() []byte { return specYAML }
 
-// DocsHandler serves interactive docs at /docs.
-func DocsHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(docsHTML))
-}
+// DocsPage returns the HTML page that renders the contract.
+func DocsPage() []byte { return []byte(docsHTML) }

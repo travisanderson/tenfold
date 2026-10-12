@@ -12,6 +12,7 @@ import (
 	"sort"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -90,6 +91,17 @@ func (s *Store) Migrate(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// SafeError describes an error for a log without quoting customer data. A
+// Postgres error can carry the offending row in its detail and context
+// fields, so only its code and message are kept.
+func SafeError(err error) string {
+	var pg *pgconn.PgError
+	if errors.As(err, &pg) {
+		return fmt.Sprintf("postgres %s: %s", pg.Code, pg.Message)
+	}
+	return err.Error()
 }
 
 // notFound turns pgx's "no rows" into ErrNotFound.

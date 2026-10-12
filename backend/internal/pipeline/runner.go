@@ -9,11 +9,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
 
 	"tenfold/backend/internal/api"
 	"tenfold/backend/internal/blob"
@@ -110,6 +110,11 @@ func (r *Runner) Analyze(ctx context.Context, userID, uploadID uuid.UUID, opts O
 		return model.Upload{}, err
 	}
 
+	// Copy the state to return before the job starts changing it. The job's
+	// goroutine owns j from here on.
+	queued := j.u
+	queued.Pipeline = slices.Clone(j.u.Pipeline)
+
 	// The job outlives the request that started it.
 	jobCtx, cancel := context.WithCancel(context.Background())
 	r.mu.Lock()
@@ -126,7 +131,7 @@ func (r *Runner) Analyze(ctx context.Context, userID, uploadID uuid.UUID, opts O
 		}()
 		j.run(jobCtx, from)
 	}()
-	return j.u, nil
+	return queued, nil
 }
 
 // startStage decides where a new job begins.
@@ -301,7 +306,7 @@ func (j *job) run(ctx context.Context, from api.PipelineStage) {
 			j.stage(stage).State = api.StageStateStopped
 		case err != nil:
 			// The analyst gets a plain line; the detail goes to the log.
-			log.Error("a stage stopped", "stage", stage, "error", safeError(err))
+			log.Error("a stage stopped", "stage", stage, "error", store.SafeError(err))
 			j.stop(ctx, stage, api.StopReasonStageFailed, stageFailedMessage(stage))
 			return
 		}
@@ -409,23 +414,14 @@ func (j *job) save(ctx context.Context) {
 	}
 	j.lastSaved = time.Now()
 	if err := j.r.store.SaveJobState(ctx, j.u); err != nil {
-		j.r.log.Error("could not save job state", "upload", j.u.ID, "error", safeError(err))
+		j.r.log.Error("could not save job state", "upload", j.u.ID, "error", store.SafeError(err))
 	}
 	j.r.hub.Publish(ProgressOf(j.u))
 }
 
-// safeError describes an error for the log without quoting customer data.
-// A Postgres error can carry the offending row in its detail and context
-// fields, so only its code and message are kept.
-func safeError(err error) string {
-	var pg *pgconn.PgError
-	if errors.As(err, &pg) {
-		return fmt.Sprintf("postgres %s: %s", pg.Code, pg.Message)
-	}
-	return err.Error()
-}
-
-// ProgressOf builds the progress event for an upload's current state.
+// ProgressOf builds the progress event for an upload's current state. The
+// pipeline is copied: the event is read on another goroutine while the job
+// keeps updating its own.
 func ProgressOf(u model.Upload) api.ProgressEvent {
 	return api.ProgressEvent{
 		UploadId: u.ID,
@@ -439,7 +435,7 @@ func ProgressOf(u model.Upload) api.ProgressEvent {
 			Anomalies: orZero(u.AnomalyCount),
 			Incidents: orZero(u.IncidentCount),
 		},
-		Pipeline: u.Pipeline,
+		Pipeline: slices.Clone(u.Pipeline),
 		At:       time.Now().UTC(),
 	}
 }

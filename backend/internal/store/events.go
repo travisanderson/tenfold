@@ -270,17 +270,19 @@ type EventFlag struct {
 }
 
 // EventFlags returns, for each of the given lines, the anomalies it is
-// evidence for. Anomalies the job has not yet decided on are left out.
+// evidence for. A nil lineNos means every line of the upload. Anomalies
+// the job has not yet decided on are left out.
 func (s *Store) EventFlags(ctx context.Context, uploadID uuid.UUID, lineNos []int) (map[int][]EventFlag, error) {
 	flags := map[int][]EventFlag{}
-	if len(lineNos) == 0 {
+	if lineNos != nil && len(lineNos) == 0 {
 		return flags, nil
 	}
 	rows, err := s.pool.Query(ctx, `
 		select ae.line_no, a.id, a.label, a.disposition, a.incident_id
 		from anomaly_events ae
 		join anomalies a on a.id = ae.anomaly_id
-		where ae.upload_id = $1 and ae.line_no = any($2) and a.disposition <> 'pending'
+		where ae.upload_id = $1 and ($2::int[] is null or ae.line_no = any($2))
+			and a.disposition <> 'pending'
 		order by a.risk_score desc, a.id`, uploadID, lineNos)
 	if err != nil {
 		return nil, err
