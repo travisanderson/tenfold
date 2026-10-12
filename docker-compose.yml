@@ -1,0 +1,62 @@
+# Tenfold on one machine. From a fresh clone, three steps:
+#
+#   1. git clone <this repository> && cd tenfold
+#   2. npx supabase start      # Postgres, Auth and Storage, in Docker
+#   3. docker compose up       # the API and the web app
+#
+# Then open http://localhost:3000 and sign in as
+# demo@local.test with the password demo-password.
+#
+# Settings come from .env.example, which holds only public local defaults,
+# so there is nothing to copy or fill in. To change one, such as adding an
+# AI key, put that line in a file named .env beside it.
+#
+# Production does not use this file. Railway builds backend/Dockerfile and
+# Vercel builds the frontend itself.
+name: tenfold
+
+services:
+  # Writes the three demo logs into ./samples the first time, so "Load demo
+  # data" works and there is a file on disk to upload by hand. About 90 MB.
+  samples:
+    image: golang:1.27
+    working_dir: /src
+    volumes:
+      - ./samples:/src
+    command: sh -c "test -f attack-day.log || go run ./loggen --all --seed 42"
+
+  # The Go API. It applies the database schema each time it starts.
+  api:
+    build: ./backend
+    env_file: &settings
+      - .env.example
+      - path: .env
+        required: false
+    environment:
+      PORT: "8080"
+      SAMPLES_DIR: /samples
+    volumes:
+      - ./samples:/samples:ro
+    ports:
+      - "8080:8080"
+    # Supabase runs beside these containers, not among them. On Linux this
+    # name needs to be told where the host is; Docker Desktop knows already.
+    extra_hosts: &host
+      - host.docker.internal:host-gateway
+    depends_on:
+      samples:
+        condition: service_completed_successfully
+    restart: on-failure
+
+  # The Next.js app. The browser talks only to it; it talks to the API.
+  web:
+    build: ./frontend
+    env_file: *settings
+    environment:
+      TENFOLD_API_URL: http://api:8080
+    ports:
+      - "3000:3000"
+    extra_hosts: *host
+    depends_on:
+      - api
+    restart: on-failure

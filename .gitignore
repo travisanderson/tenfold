@@ -3,3 +3,5 @@ node_modules/
 agents
 agents/
 samples/
+# Local overrides for docker compose. .env.example is the tracked copy.
+.env
