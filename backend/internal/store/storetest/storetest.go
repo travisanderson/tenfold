@@ -1,9 +1,10 @@
 // Package storetest gives tests a real, empty database. Tests that need one
 // are skipped unless TEST_DATABASE_URL is set, so `go test ./...` passes on
-// a machine without Postgres.
+// a machine with no database to reach.
 //
-//	docker compose up -d
-//	TEST_DATABASE_URL=postgres://tenfold:tenfold@localhost:54329/tenfold go test ./...
+// For this project TEST_DATABASE_URL is the Supabase database. Each test
+// works in its own schema and drops it at the end, so it never sees or
+// touches the app's tables. See the README for the command.
 package storetest
 
 import (
