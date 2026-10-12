@@ -84,9 +84,9 @@ func newFakeClaude(t *testing.T, reply func(claudeRequest) (int, string)) (*fake
 		io.WriteString(w, body)
 	}))
 	t.Cleanup(server.Close)
-	ai := NewClaudeAI("test-key", DefaultJudgeModel, DefaultNarrativeModel,
+	judge, narrator := NewClaude("test-key", DefaultJudgeModel, DefaultNarrativeModel,
 		option.WithBaseURL(server.URL), option.WithMaxRetries(0))
-	return fake, ai
+	return fake, AI{Judge: judge, Narrator: narrator}
 }
 
 // A small incident: one user, one large transfer, two detectors.

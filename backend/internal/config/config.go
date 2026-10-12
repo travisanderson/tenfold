@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -35,21 +36,23 @@ type Config struct {
 	// pool must stay well under it.
 	DBMaxConns int
 
-	// AIProvider picks who judges and who narrates:
+	// Who fills each AI role. Each is "jev", "claude", "mock" or "none",
+	// except that Jev cannot narrate.
 	//
-	//	jev     Jev judges, Claude narrates, Claude judges in shadow
-	//	claude  Claude judges and narrates, the mock judges in shadow
-	//	mock    the offline stand-in does both
-	//	none    no AI
-	//
-	// "jev" needs both keys; "claude" needs AnthropicAPIKey. The models are
-	// optional; empty means the pipeline's defaults.
-	AIProvider      string
-	AnthropicAPIKey string
-	JevAPIKey       string
-	JevModel        string
-	JudgeModel      string // Claude's, when Claude judges
-	NarrativeModel  string
+	//	JudgeProvider        labels each anomaly; its label can set a group aside
+	//	ShadowJudgeProvider  labels the same anomalies for comparison only
+	//	NarrativeProvider    writes each incident's account
+	JudgeProvider       string
+	ShadowJudgeProvider string
+	NarrativeProvider   string
+
+	// A key is required only when a role names its provider. The models
+	// are optional; empty means the pipeline's defaults.
+	AnthropicAPIKey      string
+	JevAPIKey            string
+	JevModel             string
+	ClaudeJudgeModel     string
+	ClaudeNarrativeModel string
 
 	RiskThreshold int
 }
@@ -57,21 +60,23 @@ type Config struct {
 // Load reads the environment and reports every problem at once.
 func Load() (Config, error) {
 	c := Config{
-		Port:               env("PORT", "8080"),
-		DatabaseURL:        os.Getenv("DATABASE_URL"),
-		SupabaseURL:        strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"),
-		SupabaseServiceKey: os.Getenv("SUPABASE_SERVICE_KEY"),
-		StorageBucket:      env("STORAGE_BUCKET", "logs"),
-		JWKSURL:            os.Getenv("SUPABASE_JWKS_URL"),
-		JWTSecret:          os.Getenv("SUPABASE_JWT_SECRET"),
-		SamplesBucket:      env("SAMPLES_BUCKET", "samples"),
-		SamplesDir:         os.Getenv("SAMPLES_DIR"),
-		AIProvider:         env("AI_PROVIDER", "mock"),
-		AnthropicAPIKey:    os.Getenv("ANTHROPIC_API_KEY"),
-		JevAPIKey:          os.Getenv("JEV_API_KEY"),
-		JevModel:           os.Getenv("JEV_MODEL"),
-		JudgeModel:         os.Getenv("AI_JUDGE_MODEL"),
-		NarrativeModel:     os.Getenv("AI_NARRATIVE_MODEL"),
+		Port:                 env("PORT", "8080"),
+		DatabaseURL:          os.Getenv("DATABASE_URL"),
+		SupabaseURL:          strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"),
+		SupabaseServiceKey:   os.Getenv("SUPABASE_SERVICE_KEY"),
+		StorageBucket:        env("STORAGE_BUCKET", "logs"),
+		JWKSURL:              os.Getenv("SUPABASE_JWKS_URL"),
+		JWTSecret:            os.Getenv("SUPABASE_JWT_SECRET"),
+		SamplesBucket:        env("SAMPLES_BUCKET", "samples"),
+		SamplesDir:           os.Getenv("SAMPLES_DIR"),
+		JudgeProvider:        env("AI_JUDGE_PROVIDER", "mock"),
+		ShadowJudgeProvider:  env("AI_SHADOW_JUDGE_PROVIDER", "none"),
+		NarrativeProvider:    env("AI_NARRATIVE_PROVIDER", "mock"),
+		AnthropicAPIKey:      os.Getenv("ANTHROPIC_API_KEY"),
+		JevAPIKey:            os.Getenv("JEV_API_KEY"),
+		JevModel:             os.Getenv("JEV_MODEL"),
+		ClaudeJudgeModel:     os.Getenv("CLAUDE_JUDGE_MODEL"),
+		ClaudeNarrativeModel: os.Getenv("CLAUDE_NARRATIVE_MODEL"),
 	}
 
 	var problems []string
@@ -87,18 +92,7 @@ func Load() (Config, error) {
 	if c.JWKSURL == "" && c.JWTSecret == "" && c.SupabaseURL != "" {
 		c.JWKSURL = c.SupabaseURL + "/auth/v1/.well-known/jwks.json"
 	}
-	switch c.AIProvider {
-	case "mock", "none":
-	case "claude", "jev":
-		if c.AnthropicAPIKey == "" {
-			problems = append(problems, fmt.Sprintf("ANTHROPIC_API_KEY is required when AI_PROVIDER is %s", c.AIProvider))
-		}
-		if c.AIProvider == "jev" && c.JevAPIKey == "" {
-			problems = append(problems, "JEV_API_KEY is required when AI_PROVIDER is jev")
-		}
-	default:
-		problems = append(problems, fmt.Sprintf("AI_PROVIDER %q is not jev, claude, mock or none", c.AIProvider))
-	}
+	problems = append(problems, c.aiProblems()...)
 	threshold, err := strconv.Atoi(env("RISK_THRESHOLD", "30"))
 	if err != nil || threshold < 0 || threshold > 100 {
 		problems = append(problems, "RISK_THRESHOLD must be an integer from 0 to 100")
@@ -114,6 +108,35 @@ func Load() (Config, error) {
 		return Config{}, errors.New(strings.Join(problems, "; "))
 	}
 	return c, nil
+}
+
+// aiProblems checks the three AI roles and the keys they need.
+func (c Config) aiProblems() []string {
+	var problems []string
+	if os.Getenv("AI_PROVIDER") != "" {
+		problems = append(problems,
+			"AI_PROVIDER is no longer read; set AI_JUDGE_PROVIDER, AI_SHADOW_JUDGE_PROVIDER and AI_NARRATIVE_PROVIDER")
+	}
+	roles := []struct{ name, value, allowed string }{
+		{"AI_JUDGE_PROVIDER", c.JudgeProvider, "jev claude mock none"},
+		{"AI_SHADOW_JUDGE_PROVIDER", c.ShadowJudgeProvider, "jev claude mock none"},
+		{"AI_NARRATIVE_PROVIDER", c.NarrativeProvider, "claude mock none"}, // Jev does not write text
+	}
+	for _, role := range roles {
+		if !slices.Contains(strings.Fields(role.allowed), role.value) {
+			problems = append(problems, fmt.Sprintf("%s %q is not one of: %s", role.name, role.value, role.allowed))
+		}
+		if role.value == "claude" && c.AnthropicAPIKey == "" {
+			problems = append(problems, fmt.Sprintf("ANTHROPIC_API_KEY is required when %s is claude", role.name))
+		}
+		if role.value == "jev" && c.JevAPIKey == "" {
+			problems = append(problems, fmt.Sprintf("JEV_API_KEY is required when %s is jev", role.name))
+		}
+	}
+	if c.ShadowJudgeProvider != "none" && c.ShadowJudgeProvider == c.JudgeProvider {
+		problems = append(problems, "AI_SHADOW_JUDGE_PROVIDER must differ from AI_JUDGE_PROVIDER; a judge compared with itself says nothing")
+	}
+	return problems
 }
 
 // LoadDotEnv sets variables from a KEY=VALUE file, if the file exists.

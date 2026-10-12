@@ -35,16 +35,12 @@ const (
 // on; each caller has a safe fallback.
 var errNoAnswer = errors.New("the model gave no usable answer")
 
-// NewClaudeAI returns the Claude judge and narrator. The offline stand-in
-// runs beside the judge as a shadow, so the scorecard can compare the two.
-func NewClaudeAI(apiKey, judgeModel, narrativeModel string, opts ...option.RequestOption) AI {
+// NewClaude returns the Claude judge and the Claude narrator. They share
+// one client. Either may go unused; nothing is sent until one is asked.
+func NewClaude(apiKey, judgeModel, narrativeModel string, opts ...option.RequestOption) (ClaudeJudge, ClaudeNarrator) {
 	opts = append([]option.RequestOption{option.WithAPIKey(apiKey), option.WithRequestTimeout(claudeTimeout)}, opts...)
 	c := &claude{client: anthropic.NewClient(opts...)}
-	return AI{
-		Judge:    ClaudeJudge{c: c, model: judgeModel},
-		Narrator: ClaudeNarrator{c: c, model: narrativeModel},
-		Shadow:   MockJudge{},
-	}
+	return ClaudeJudge{c: c, model: judgeModel}, ClaudeNarrator{c: c, model: narrativeModel}
 }
 
 // claude is the one place that talks to the Anthropic API.

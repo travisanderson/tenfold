@@ -42,7 +42,7 @@ func TestLiveJudges(t *testing.T) {
 		judges["jev"] = jev
 	}
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key != "" {
-		judges["claude"] = NewClaudeAI(key, DefaultJudgeModel, DefaultNarrativeModel).Judge
+		judges["claude"], _ = NewClaude(key, DefaultJudgeModel, DefaultNarrativeModel)
 	}
 	if len(judges) == 0 {
 		t.Skip("no API key is set")
@@ -96,7 +96,7 @@ func TestLiveNarrator(t *testing.T) {
 	if os.Getenv("LIVE_AI") == "" || apiKey == "" {
 		t.Skip("set LIVE_AI=1 and ANTHROPIC_API_KEY to call the real model")
 	}
-	narrator := NewClaudeAI(apiKey, DefaultJudgeModel, DefaultNarrativeModel).Narrator
+	_, narrator := NewClaude(apiKey, DefaultJudgeModel, DefaultNarrativeModel)
 	events, byLine, _ := liveSample(t)
 	file := newFileView(events)
 
@@ -133,9 +133,9 @@ func TestLiveNarrator(t *testing.T) {
 	}
 }
 
-// TestLivePipeline runs a demo sample through the whole job the way
-// AI_PROVIDER=jev does: Jev judges, Claude judges in shadow, Claude
-// narrates. It needs both keys and TEST_DATABASE_URL.
+// TestLivePipeline runs a demo sample through the whole job with Jev as
+// the judge, Claude as the shadow judge and Claude as the narrator. It
+// needs both keys and TEST_DATABASE_URL.
 func TestLivePipeline(t *testing.T) {
 	jevKey, claudeKey := os.Getenv("JEV_API_KEY"), os.Getenv("ANTHROPIC_API_KEY")
 	if os.Getenv("LIVE_AI") == "" || jevKey == "" || claudeKey == "" {
@@ -146,8 +146,8 @@ func TestLivePipeline(t *testing.T) {
 		name = "attack-day"
 	}
 	st := storetest.New(t)
-	ai := NewClaudeAI(claudeKey, DefaultJudgeModel, DefaultNarrativeModel)
-	ai.Shadow, ai.Judge = ai.Judge, NewJevJudge(jevKey, DefaultJevModel)
+	claudeJudge, claudeNarrator := NewClaude(claudeKey, DefaultJudgeModel, DefaultNarrativeModel)
+	ai := AI{Judge: NewJevJudge(jevKey, DefaultJevModel), Shadow: claudeJudge, Narrator: claudeNarrator}
 
 	user := uuid.New()
 	u := sampleUpload(t, st, user, name)

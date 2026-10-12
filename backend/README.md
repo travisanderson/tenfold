@@ -113,20 +113,26 @@ See `.env.example`.
 
 ## The AI layer
 
-`AI_PROVIDER` picks who fills the two AI roles, both defined in
-`internal/pipeline/ai.go`:
+There are three AI roles, defined in `internal/pipeline/ai.go`. Each has
+its own setting, so any provider that can do a job can be given it.
 
-| Role | Runs | Asks |
-| --- | --- | --- |
-| `Judge` | once per anomaly in a group that reached the threshold | likely malicious, likely benign, or inconclusive? |
-| `Narrator` | once per incident | what happened, in sentences that cite events |
+| Role | Setting | Runs | Job |
+| --- | --- | --- | --- |
+| Judge | `AI_JUDGE_PROVIDER` | once per anomaly in a group that reached the threshold | Labels it likely malicious, likely benign or inconclusive. A benign label can set a low-scoring group aside. |
+| Shadow judge | `AI_SHADOW_JUDGE_PROVIDER` | on the same anomalies | Labels them too. Its labels are saved for the scorecard and change nothing. |
+| Narrator | `AI_NARRATIVE_PROVIDER` | once per incident | Writes what happened, in sentences that cite events. |
 
-| `AI_PROVIDER` | Judge | Narrator | Shadow judge | Keys |
-| --- | --- | --- | --- | --- |
-| `jev` | Jev | Claude | Claude | `JEV_API_KEY`, `ANTHROPIC_API_KEY` |
-| `claude` | Claude | Claude | mock | `ANTHROPIC_API_KEY` |
-| `mock` (default) | mock | mock | none | none |
-| `none` | none | none | none | none |
+Each setting is `jev`, `claude`, `mock` or `none`; Jev cannot narrate. The
+defaults are `mock`, `none`, `mock`, which need no key. The full setup:
+
+```
+AI_JUDGE_PROVIDER=jev
+AI_SHADOW_JUDGE_PROVIDER=claude
+AI_NARRATIVE_PROVIDER=claude
+```
+
+A role set to `jev` needs `JEV_API_KEY`; one set to `claude` needs
+`ANTHROPIC_API_KEY`. The server refuses to start without a key it needs.
 
 - **Jev** (`internal/pipeline/jev.go`) is TypeSafe's decision model. It
   does not write text. It reads the facts and one typed question, malicious
@@ -138,9 +144,11 @@ See `.env.example`.
   schema.
 - **The mock** labels by risk score and writes the template text. It needs
   no key and costs nothing, so tests and offline demos use it.
-- **A shadow judge** rules on the same anomalies as the judge. Its rulings
-  are saved for the scorecard and change nothing.
-- With `none`, the upload ends as `partial` with `ai_unavailable`.
+- **Why a shadow judge?** It is how you try a second model on real traffic
+  without trusting it: both rule, only the judge counts, and the scorecard
+  shows where they split and how each did against the answer key.
+- With the judge set to `none`, the upload ends as `partial` with
+  `ai_unavailable`.
 
 What a model is shown: the detector's finding, its measurements, and a
 sample of normalized events, 12 per anomaly. It is not shown the raw log

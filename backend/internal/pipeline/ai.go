@@ -57,8 +57,8 @@ type AI struct {
 	Shadow   Judge
 }
 
-// NewAI returns the offline providers for a configured name: "mock" or
-// "none". NewClaudeAI returns the real ones.
+// NewAI returns the offline providers for a name: "mock" or "none". The
+// server picks a provider for each role instead; see cmd/api.
 func NewAI(provider string) AI {
 	if provider == "mock" {
 		return AI{Judge: MockJudge{}, Narrator: MockNarrator{}}

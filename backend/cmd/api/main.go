@@ -82,21 +82,8 @@ func run(log *slog.Logger) error {
 		log.Warn("no demo samples found; 'Load demo data' will be empty. Run `go run ./cmd/uploadsamples`.")
 	}
 
-	ai := pipeline.NewAI(cfg.AIProvider)
-	if cfg.AIProvider == "claude" || cfg.AIProvider == "jev" {
-		ai = pipeline.NewClaudeAI(cfg.AnthropicAPIKey,
-			cmp.Or(cfg.JudgeModel, pipeline.DefaultJudgeModel),
-			cmp.Or(cfg.NarrativeModel, pipeline.DefaultNarrativeModel))
-	}
-	if cfg.AIProvider == "jev" {
-		// Jev takes the judge's seat. Claude's judge moves to the shadow,
-		// so every anomaly gets both rulings and the scorecard compares them.
-		ai.Shadow = ai.Judge
-		ai.Judge = pipeline.NewJevJudge(cfg.JevAPIKey, cmp.Or(cfg.JevModel, pipeline.DefaultJevModel))
-	}
-
 	hub := pipeline.NewHub()
-	runner := pipeline.NewRunner(st, blobs, catalog, hub, ai, log)
+	runner := pipeline.NewRunner(st, blobs, catalog, hub, aiFor(cfg), log)
 	if err := runner.RecoverStranded(startup); err != nil {
 		return err
 	}
@@ -123,7 +110,8 @@ func run(log *slog.Logger) error {
 	}
 	failed := make(chan error, 1)
 	go func() { failed <- httpServer.Serve(listener) }()
-	log.Info("listening", "port", cfg.Port, "ai", cfg.AIProvider, "riskThreshold", cfg.RiskThreshold)
+	log.Info("listening", "port", cfg.Port, "judge", cfg.JudgeProvider, "shadowJudge", cfg.ShadowJudgeProvider,
+		"narrator", cfg.NarrativeProvider, "riskThreshold", cfg.RiskThreshold)
 
 	select {
 	case err := <-failed:
@@ -140,4 +128,26 @@ func run(log *slog.Logger) error {
 		return err
 	}
 	return nil
+}
+
+// aiFor seats a provider in each AI role, as the settings name them. A role
+// set to "none" stays empty: no entry in the map means nobody fills it.
+func aiFor(cfg config.Config) pipeline.AI {
+	claudeJudge, claudeNarrator := pipeline.NewClaude(cfg.AnthropicAPIKey,
+		cmp.Or(cfg.ClaudeJudgeModel, pipeline.DefaultJudgeModel),
+		cmp.Or(cfg.ClaudeNarrativeModel, pipeline.DefaultNarrativeModel))
+	judges := map[string]pipeline.Judge{
+		"jev":    pipeline.NewJevJudge(cfg.JevAPIKey, cmp.Or(cfg.JevModel, pipeline.DefaultJevModel)),
+		"claude": claudeJudge,
+		"mock":   pipeline.MockJudge{},
+	}
+	narrators := map[string]pipeline.Narrator{
+		"claude": claudeNarrator,
+		"mock":   pipeline.MockNarrator{},
+	}
+	return pipeline.AI{
+		Judge:    judges[cfg.JudgeProvider],
+		Shadow:   judges[cfg.ShadowJudgeProvider],
+		Narrator: narrators[cfg.NarrativeProvider],
+	}
 }
