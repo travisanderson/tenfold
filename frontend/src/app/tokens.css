@@ -1,0 +1,108 @@
+/*
+ * Tenfold design tokens.
+ * Every value here is taken from the final mockups in this folder.
+ * Use these variables in components. Do not write hex values inline.
+ *
+ * Tailwind v4: copy the custom properties into an @theme block and rename
+ * them to Tailwind's namespaces (--color-*, --font-*, --radius-*, --spacing-*).
+ */
+
+:root {
+  /* Surfaces, darkest to lightest */
+  --color-ground: #070b14;        /* page background */
+  --color-panel: #0d1421;         /* cards, tables, chart and graph canvases */
+  --color-panel-alt: #111b2b;     /* alternate table rows */
+  --color-panel-raised: #121b2b;  /* graph nodes, chips, controls */
+  --color-dialog: #0f1726;        /* modal surface */
+  --color-overlay: rgba(4, 5, 6, 0.78); /* backdrop behind a modal */
+
+  /* Lines */
+  --color-hairline: #1e2a3a;      /* panel borders, table header rule */
+  --color-hairline-soft: #172233; /* row rules inside a panel */
+  --color-border: #55677d;        /* inputs, secondary buttons, neutral edges */
+
+  /* Text */
+  --color-text: #f3f6fa;
+  --color-text-secondary: #9db0c4;
+  --color-text-data: #c5d2e0;     /* raw log lines, secondary monospace values */
+  --color-text-on-accent: #070b14;
+
+  /* Accent: the one interactive colour */
+  --color-accent: #6fd0e6;
+  --color-accent-hover: #a8e6f4;
+  --color-accent-2: #5bb4c9;      /* risk bar, second segment */
+  --color-accent-3: #4a97ab;      /* risk bar, third segment */
+  --color-accent-4: #3b7b8d;      /* risk bar, fourth segment; use white text on it */
+  --color-selected: #12303d;      /* selected node, cited rows, selected sentence */
+
+  /* AI-written content. Never use these for observed or measured data. */
+  --color-ai-panel: #0e1f2b;
+  --color-ai-text: #c9e3ec;
+  --color-ai-label: var(--color-accent);
+
+  /* Severity. Always pair the colour with its label and icon. */
+  --color-severity-high: #ff9d4d;    /* triangle icon */
+  --color-severity-medium: #e8c95a;  /* square icon */
+  --color-severity-critical: #ff6b5e; /* not drawn in the mockups; proposed */
+  --color-severity-low: #7fa8d9;      /* not drawn in the mockups; proposed */
+  --color-warning: #e8c95a;          /* false positives, malformed, partial */
+  --color-flagged: #ff9d4d;          /* flagged edges, bars and row reasons */
+
+  /* Charts and graphs */
+  --color-chart-line: #c5d2e0;
+  --color-chart-band: #172233;       /* threshold or median band */
+  --color-chart-bar: #24344a;        /* hourly volume bars */
+  --color-chart-flagged-fill: rgba(255, 157, 77, 0.22);
+  --color-graph-dot: #223046;        /* dotted graph background, 20px grid */
+  --color-graph-edge: #55677d;
+  --color-graph-edge-flagged: #ff9d4d;
+
+  /* Type */
+  --font-sans: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-mono: "Spline Sans Mono Variable", ui-monospace, monospace; /* log data, IPs, domains, event IDs, counts */
+
+  --text-xs: 12px;      /* chip labels, table secondary line */
+  --text-sm: 13px;      /* captions, table headers, monospace data */
+  --text-base: 15px;    /* body */
+  --text-md: 17px;      /* AI narrative, lead paragraph */
+  --text-lg: 24px;      /* card titles */
+  --text-xl: 40px;      /* page headline */
+  --text-stat: 26px;    /* small stat numerals, monospace */
+  --text-score: 56px;   /* risk score numeral, monospace */
+  --text-hero: 168px;   /* the large count on triage; weight 300 */
+
+  --leading-body: 1.45;
+  --leading-tight: 1.05;
+  --tracking-label: 0.08em;  /* uppercase labels such as AI INTERPRETATION */
+  --tracking-display: -0.02em;
+
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Shape */
+  --radius-sm: 8px;      /* inner blocks: raw log, AI summary inside a card */
+  --radius-md: 10px;     /* inputs inside a dialog */
+  --radius-lg: 12px;     /* panels, cards, graph nodes */
+  --radius-xl: 16px;     /* modal */
+  --radius-pill: 999px;  /* buttons, chips, nav items, selects */
+
+  /* Space */
+  --space-1: 6px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 36px;
+  --page-gutter: 36px;      /* left and right page padding */
+  --section-gap: 36px;      /* between page sections */
+  --panel-padding: 24px;    /* inside cards and panels */
+  --table-row-padding: 11px 20px;
+
+  /* Controls */
+  --control-sm: 34px;   /* inline buttons in a panel */
+  --control-md: 40px;   /* filter bar inputs and selects */
+  --control-lg: 48px;   /* primary actions: verdict buttons, Open incident */
+}
