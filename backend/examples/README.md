@@ -5,8 +5,13 @@ after loading the `attack-day` demo sample. They are for checking that
 frontend components draw live data. All of it is synthetic: Northwind Labs
 does not exist.
 
-They are a snapshot. IDs differ on every run, and the detectors change in
+They are a snapshot. IDs differ on every run, and the detectors changed in
 session 5, so never read these files at run time.
+
+The AI output here is the mock's. The capture predates Jev and Claude: every
+decision has `provider: mock`, the narratives are the template text, and
+`eval.json` scores the mock judge. For how the real judges rule, run
+`TestLiveJudges`, as `../README.md` describes.
 
 | File | Call |
 | --- | --- |

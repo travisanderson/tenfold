@@ -2,6 +2,7 @@ package detect
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"os"
 	"path/filepath"
@@ -20,7 +21,8 @@ const threshold = 30
 
 // The samples folder is not in version control. These tests run when it
 // has been generated (`make samples`) and are skipped when it has not.
-const samplesDir = "../../../samples"
+// SAMPLES_DIR points them at another set, such as one from a different seed.
+var samplesDir = cmp.Or(os.Getenv("SAMPLES_DIR"), "../../../samples")
 
 func loadSample(t *testing.T, name string) ([]model.Event, samples.AnswerKey) {
 	t.Helper()
