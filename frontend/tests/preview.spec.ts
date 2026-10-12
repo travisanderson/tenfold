@@ -56,3 +56,26 @@ for (const width of [1440, 390]) {
   await page.screenshot({path:`test-results/events-${width}.png`,fullPage:true});
  });
 }
+test('wheel scrolls the page without zooming either graph',async({page})=>{
+ for(const route of ['/uploads','/incidents/3f2b8c1e-5d4a-4e6f-9a1b-2c3d4e5f6a7b']){
+  await page.goto(route);
+  const flow=page.locator('.react-flow');await flow.scrollIntoViewIfNeeded();
+  const viewport=flow.locator('.react-flow__viewport');
+  await expect(viewport).not.toHaveAttribute('style',/scale\(0\)/);
+  const before=await viewport.getAttribute('style');await flow.hover();await page.mouse.wheel(0,200);
+  await expect(viewport).toHaveAttribute('style',before!);
+  await flow.scrollIntoViewIfNeeded();await flow.getByRole('button',{name:'zoom in'}).click();
+  await expect(viewport).not.toHaveAttribute('style',before!);
+ }
+});
+for(const width of [1440,390]){
+ test(`operational states at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.goto('/states');
+ await expect(page.getByRole('heading',{name:'What an upload can turn into.'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Analyse the good lines'})).toBeVisible();
+ await expect(page.locator('body')).toHaveJSProperty('scrollWidth',width);
+ await page.screenshot({path:`test-results/states-${width}.png`,fullPage:true});
+ await page.getByRole('button',{name:'Try the AI stages again'}).click();
+ await expect(page.getByRole('status')).toHaveText('Analysis resumed in this preview.');
+ });
+}
