@@ -1,4 +1,5 @@
 "use client";
+import { usePreferences } from "./preferences";
 import { createContext, useContext, useState } from "react";
 import { initialIncidents } from "@/lib/incident-fixtures";
 import type { Incident, Upload, Schema } from "@/lib/types";
@@ -36,7 +37,7 @@ export function WorkspaceProvider({
   const [incidents, setIncidents] = useState<Incident[]>(
     initialData?.incidents ?? [],
   );
-  const [zone, setZone] = useState("America/New_York");
+  const { zone, setZone } = usePreferences();
   const [storedUploads, setUploads] = useState<Upload[]>(
     initialData?.uploads ?? [],
   );

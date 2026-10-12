@@ -19,7 +19,7 @@ export function PreviewShell() {
     (i) => pathname === `/incidents/${i.id}`,
   );
   const activeUpload =
-    query.get("upload") ?? incident?.uploadId ?? state.selectedUploadId;
+    incident?.uploadId ?? query.get("upload") ?? state.selectedUploadId;
   const hasData = state.uploads.length > 0;
   if (!hasData && !["/uploads", "/states"].includes(pathname))
     redirect("/uploads");

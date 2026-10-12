@@ -106,3 +106,10 @@ export async function previewLesson(
     await api.POST("/v1/lessons/preview", { body: { uploadId, scope } }),
   );
 }
+
+export async function uploadPage(cursor: string) {
+  const api = await serverApi();
+  return result(
+    await api.GET("/v1/uploads", { params: { query: { cursor, limit: 100 } } }),
+  );
+}

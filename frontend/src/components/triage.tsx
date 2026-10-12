@@ -26,7 +26,10 @@ export function Triage() {
   const incidents = (state.live?.summaries ?? state.incidents).filter(
     (i) => i.uploadId === upload.id,
   );
-  if (upload.status !== "completed")
+  if (
+    upload.status !== "completed" &&
+    !(upload.status === "partial" && upload.stop?.reason !== "parse_errors")
+  )
     return !state.demo ? (
       <LiveUploadState upload={upload} />
     ) : (
@@ -52,6 +55,9 @@ export function Triage() {
   ).length;
   return (
     <>
+      {!state.demo && upload.status === "partial" && (
+        <LiveUploadState upload={upload} />
+      )}
       <section className="upload-bar">
         <span className="eyebrow pill">Latest upload</span>
         <label>

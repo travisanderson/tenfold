@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -11,13 +11,18 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
+import { eventPage } from "@/lib/api/actions";
+import { unwrap } from "@/lib/api/result";
+import { usePagedData } from "./use-paged-data";
+import type { Schema } from "@/lib/types";
 import { matchesQuery } from "@/lib/event-filter";
 import type { LogEvent } from "@/lib/types";
-import { number, time, bytes } from "@/lib/format";
+import { date, number, time, bytes } from "@/lib/format";
 import { useWorkspace } from "./workspace";
 import { RawLine, CopyButton } from "./evidence";
 export function Events() {
-  const { zone, uploads, incidents, selectedUploadId } = useWorkspace();
+  const { zone, uploads, incidents, selectedUploadId, live, demo } =
+    useWorkspace();
   const params = useSearchParams();
   const upload = params.get("upload") ?? selectedUploadId;
   const allEvents = useMemo(
@@ -39,7 +44,36 @@ export function Events() {
   const [selectedId, setSelectedId] = useState(params.get("event") ?? "e1048");
   const [drawer, setDrawer] = useState(true);
   const [visibility, setVisibility] = useState<VisibilityState>({});
-  const filtered = useMemo(
+  const range = uploads.find((u) => u.id === upload)?.timeRange;
+  const hours = useMemo(() => {
+    if (!range) return [];
+    const start =
+      Math.floor(new Date(range.start).getTime() / 3600000) * 3600000;
+    const end = new Date(range.end).getTime();
+    return Array.from(
+      { length: Math.min(744, Math.floor((end - start) / 3600000) + 1) },
+      (_, i) => new Date(start + i * 3600000).toISOString(),
+    );
+  }, [range]);
+  const fetchPage = useCallback(
+    async (cursor?: string) =>
+      unwrap(
+        await eventPage(upload, {
+          limit: 200,
+          cursor,
+          q: query || undefined,
+          action: action ? (action as Schema["EventAction"]) : undefined,
+          hasAnomaly: anomalous || undefined,
+          from: hour || undefined,
+          to: hour
+            ? new Date(new Date(hour).getTime() + 3600000).toISOString()
+            : undefined,
+        }),
+      ),
+    [upload, query, action, anomalous, hour],
+  );
+  const remote = usePagedData(live?.events, fetchPage, !demo);
+  const localFiltered = useMemo(
     () =>
       allEvents.filter(
         (e) =>
@@ -50,6 +84,7 @@ export function Events() {
       ),
     [allEvents, query, action, anomalous, hour, zone],
   );
+  const filtered = demo ? localFiltered : remote.page.items;
   const selected = filtered.find((e) => e.id === selectedId);
   const scroll = useRef<HTMLDivElement>(null);
   const columns = useMemo<ColumnDef<LogEvent>[]>(
@@ -154,7 +189,9 @@ export function Events() {
         <h1>Every event, as logged.</h1>
         <div className="stats">
           <div>
-            <strong>{number(filtered.length)}</strong>
+            <strong>
+              {number(demo ? filtered.length : remote.page.total)}
+            </strong>
             <small>match your filters</small>
           </div>
           <div>
@@ -184,12 +221,19 @@ export function Events() {
             onChange={(e) => setHour(e.target.value)}
           >
             <option value="">All day</option>
-            {Array.from({ length: 24 }, (_, i) => (
-              <option key={i} value={String(i).padStart(2, "0")}>
-                {String(i).padStart(2, "0")}:00–{String(i + 1).padStart(2, "0")}
-                :00
-              </option>
-            ))}
+            {demo
+              ? Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={String(i).padStart(2, "0")}>
+                    {String(i).padStart(2, "0")}:00–
+                    {String(i + 1).padStart(2, "0")}
+                    :00
+                  </option>
+                ))
+              : hours.map((value) => (
+                  <option key={value} value={value}>
+                    {date(value, zone)}
+                  </option>
+                ))}
           </select>
         </label>
         <label>
@@ -245,6 +289,12 @@ export function Events() {
           Clear filters
         </button>
       </section>
+      {!demo && remote.error && (
+        <p role="alert" className="notice">
+          {remote.error} <button onClick={remote.retry}>Try again</button>
+        </p>
+      )}
+      {!demo && remote.busy && <p role="status">Loading events…</p>}
       <div
         className={`explorer-grid ${drawer && selected ? "has-drawer" : ""}`}
       >
@@ -345,11 +395,24 @@ export function Events() {
           </div>
           <footer className="table-footer">
             <span>
-              {number(filtered.length)} matching preview events. The list
-              renders as you scroll.
+              {number(filtered.length)}{" "}
+              {demo
+                ? "matching preview events"
+                : `of ${number(remote.page.total)} matching events loaded`}
+              . The list renders as you scroll.
             </span>
             <span>J and K move the selection · Enter opens the raw line</span>
           </footer>
+          {!demo && (
+            <div className="actions">
+              {remote.page.nextCursor && (
+                <button disabled={remote.busy} onClick={remote.more}>
+                  Load more events
+                </button>
+              )}
+              <a href={`/api/uploads/${upload}/export`}>Export all events</a>
+            </div>
+          )}
         </section>
         {drawer && selected && (
           <aside className="panel raw-drawer">

@@ -13,7 +13,12 @@ import { useWorkspace } from "./workspace";
 import { Pipeline } from "./pipeline";
 import type { Upload } from "@/lib/types";
 import { LiveUploadState } from "./live-upload-state";
-import { registerUpload, analyzeUpload, deleteUpload } from "@/lib/api/actions";
+import {
+  registerUpload,
+  analyzeUpload,
+  deleteUpload,
+  uploadPage,
+} from "@/lib/api/actions";
 import { unwrap } from "@/lib/api/result";
 import { safeError, number, date, time } from "@/lib/format";
 export function Uploads() {
@@ -30,6 +35,7 @@ export function Uploads() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [nextCursor, setNextCursor] = useState(live?.nextUploadCursor);
   const active = uploads.find((u) => u.id === selectedUploadId) ?? uploads[0];
   const sample = live?.samples.find((s) => s.name === "attack-day");
   const progress = active?.pipeline.find((s) => s.stage === active.stage);
@@ -317,6 +323,31 @@ export function Uploads() {
               </tbody>
             </table>
           </div>
+          {nextCursor && (
+            <button
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  const page = unwrap(await uploadPage(nextCursor));
+                  setUploads((items) => [
+                    ...items,
+                    ...page.items.filter(
+                      (u) => !items.some((item) => item.id === u.id),
+                    ),
+                  ]);
+                  setNextCursor(page.nextCursor);
+                } catch (e) {
+                  setError(safeError(e));
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Load older uploads
+            </button>
+          )}
           {!uploads.length && (
             <p>No uploads yet. Choose a file or load the sample to begin.</p>
           )}

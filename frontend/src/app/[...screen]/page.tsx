@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { notFound } from "next/navigation";
 import { WorkspaceProvider } from "@/components/workspace";
 import { loadScreen } from "@/lib/api/load-screen";
@@ -29,7 +30,11 @@ export default async function Page({
   const data = await loadScreen(screen, query);
   return (
     <WorkspaceProvider
-      key={JSON.stringify([screen, query, data])}
+      key={JSON.stringify([
+        screen,
+        query,
+        createHash("sha256").update(JSON.stringify(data)).digest("hex"),
+      ])}
       demo={false}
       initialData={data}
     >

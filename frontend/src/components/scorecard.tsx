@@ -13,23 +13,25 @@ import { evaluation } from "@/lib/evaluation-fixtures";
 import { number, words, date } from "@/lib/format";
 import { useWorkspace } from "./workspace";
 export function Scorecard() {
-  const { zone, uploads, incidents, selectedUploadId } = useWorkspace();
+  const { zone, uploads, incidents, selectedUploadId, live, demo } =
+    useWorkspace();
   const params = useSearchParams();
   const id = params.get("upload") ?? selectedUploadId;
   const upload = uploads.find((u) => u.id === id);
   const report = useMemo(
-    () => ({
-      ...evaluation,
-      uploadId: id,
-      scoresheet: evaluation.scoresheet.map((row) => ({
-        ...row,
-        incidentId: row.incidentId
-          ? incidents.find((i) => i.uploadId === id && i.title === row.title)
-              ?.id
-          : undefined,
-      })),
-    }),
-    [id, incidents],
+    () =>
+      live?.evaluation ?? {
+        ...evaluation,
+        uploadId: id,
+        scoresheet: evaluation.scoresheet.map((row) => ({
+          ...row,
+          incidentId: row.incidentId
+            ? incidents.find((i) => i.uploadId === id && i.title === row.title)
+                ?.id
+            : undefined,
+        })),
+      },
+    [id, incidents, live],
   );
   const columns = useMemo<ColumnDef<Schema["ScoresheetRow"]>[]>(
     () => [
@@ -99,7 +101,7 @@ export function Scorecard() {
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
-  if (upload?.source !== "sample")
+  if ((!demo && !live?.evaluation) || upload?.source !== "sample")
     return (
       <section className="panel">
         <h1>This upload has no answer key.</h1>
@@ -213,22 +215,33 @@ export function Scorecard() {
       </section>
       <section className="panel section">
         <div className="section-heading">
-          <h2>Judge against judge</h2>
-          <span>
-            Both models ruled on {report.judgeAgreement.total} anomalies. They
-            agreed on {report.judgeAgreement.agreed}, or{" "}
-            {report.judgeAgreement.total
-              ? Math.round(
-                  (100 * report.judgeAgreement.agreed) /
-                    report.judgeAgreement.total,
-                )
-              : 0}
-            %.
-          </span>
-          <Link href={`/anomalies?upload=${id}&judgesDisagree=true`}>
-            See the {report.judgeAgreement.total - report.judgeAgreement.agreed}{" "}
-            they split on
-          </Link>
+          <h2>
+            {report.providers.length > 1
+              ? "Judge against judge"
+              : "Judge assessment"}
+          </h2>
+          {report.judgeAgreement.total > 0 ? (
+            <>
+              <span>
+                Both models ruled on {report.judgeAgreement.total} anomalies.
+                They agreed on {report.judgeAgreement.agreed}, or{" "}
+                {report.judgeAgreement.total
+                  ? Math.round(
+                      (100 * report.judgeAgreement.agreed) /
+                        report.judgeAgreement.total,
+                    )
+                  : 0}
+                %.
+              </span>
+              <Link href={`/anomalies?upload=${id}&judgesDisagree=true`}>
+                See the{" "}
+                {report.judgeAgreement.total - report.judgeAgreement.agreed}{" "}
+                they split on
+              </Link>
+            </>
+          ) : (
+            <span>No second judge ran. Agreement is not available.</span>
+          )}
         </div>
         <div className="judges">
           {report.providers.map((p) => (

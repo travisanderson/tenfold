@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Incident, Schema } from "@/lib/types";
+import { previewLesson } from "@/lib/api/actions";
+import { unwrap } from "@/lib/api/result";
+import { useWorkspace } from "./workspace";
 import { number, safeError } from "@/lib/format";
 export function TeachDialog({
   incident,
@@ -20,11 +23,35 @@ export function TeachDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const suggestion = incident.lessonSuggestions[scopeIndex];
-  // Sample responses are fixtures, never frontend detection calculations.
-  const preview: Schema["LessonPreviewResponse"] = {
-    wouldSuppressAnomalies: suggestion?.scope.type === "user" ? 12 : 37,
-    wouldResolveIncidents: 1,
-  };
+  const { demo } = useWorkspace();
+  const [livePreview, setLivePreview] = useState<{
+    scope: string;
+    data: Schema["LessonPreviewResponse"];
+  }>();
+  const scopeKey = JSON.stringify(suggestion?.scope);
+  const preview = demo
+    ? {
+        wouldSuppressAnomalies: suggestion?.scope.type === "user" ? 12 : 37,
+        wouldResolveIncidents: 1,
+      }
+    : livePreview?.scope === scopeKey
+      ? livePreview.data
+      : undefined;
+  useEffect(() => {
+    if (demo || !suggestion) return;
+    let disposed = false;
+    previewLesson(incident.uploadId, suggestion.scope)
+      .then((result) => {
+        const data = unwrap(result);
+        if (!disposed) setLivePreview({ scope: scopeKey, data });
+      })
+      .catch((e) => {
+        if (!disposed) setError(safeError(e));
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [demo, incident.uploadId, suggestion, scopeKey]);
   useEffect(() => {
     const element = dialog.current;
     const prior = document.activeElement as HTMLElement | null;
@@ -118,7 +145,7 @@ export function TeachDialog({
         {suggestion && (
           <div className="lesson-preview">
             <strong className="mono">
-              {number(preview.wouldSuppressAnomalies)}
+              {preview ? number(preview.wouldSuppressAnomalies) : "…"}
             </strong>
             <span>
               anomalies in this upload would have been set aside by this lesson.
@@ -143,7 +170,9 @@ export function TeachDialog({
           </button>
           <button
             className="primary"
-            disabled={busy || !text.trim() || !suggestion || !expiry}
+            disabled={
+              busy || !text.trim() || !suggestion || !expiry || !preview
+            }
           >
             {busy ? "Saving…" : "Dismiss and teach"}
           </button>

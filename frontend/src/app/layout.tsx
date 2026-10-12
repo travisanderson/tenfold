@@ -1,3 +1,4 @@
+import { Preferences } from "@/components/preferences";
 import { WorkspaceProvider } from "@/components/workspace";
 import type { Metadata } from "next";
 import "@fontsource-variable/bricolage-grotesque";
@@ -15,11 +16,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {process.env.TENFOLD_FIXTURE_MODE === "true" ? (
-          <WorkspaceProvider demo>{children}</WorkspaceProvider>
-        ) : (
-          children
-        )}
+        <Preferences>
+          {process.env.TENFOLD_FIXTURE_MODE === "true" ? (
+            <WorkspaceProvider demo>{children}</WorkspaceProvider>
+          ) : (
+            children
+          )}
+        </Preferences>
       </body>
     </html>
   );

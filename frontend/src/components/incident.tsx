@@ -9,11 +9,20 @@ import { Severity } from "./triage";
 import { IncidentChart } from "./charts";
 import { ActivityGraph } from "./activity-graph";
 import { EvidenceTable, CopyButton } from "./evidence";
-import { citationLabel, date, time, words } from "@/lib/format";
+import { saveVerdict, assignIncident, addNote } from "@/lib/api/actions";
+import { unwrap } from "@/lib/api/result";
+import { safeError, citationLabel, date, time, words } from "@/lib/format";
 import type { Schema } from "@/lib/types";
 export function IncidentScreen() {
-  const { incidents, setIncidents, setLessons, zone, selectedUploadId } =
-    useWorkspace();
+  const {
+    incidents,
+    setIncidents,
+    setLessons,
+    zone,
+    selectedUploadId,
+    live,
+    demo,
+  } = useWorkspace();
   const params = useParams<{ screen: string[] }>();
   const query = useSearchParams();
   const incident = incidents.find((i) => i.id === params.screen[1]);
@@ -21,6 +30,8 @@ export function IncidentScreen() {
   const [selected, setSelected] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const select = useCallback((ids: string[]) => setSelected(ids), []);
   if (!incident)
     return (
@@ -29,8 +40,38 @@ export function IncidentScreen() {
         <Link href="/triage">Return to triage</Link>
       </div>
     );
-  const upload = query.get("upload") ?? incident.uploadId ?? selectedUploadId;
-  const verdict = (status: Schema["VerdictStatus"]) => {
+  const upload = incident.uploadId ?? query.get("upload") ?? selectedUploadId;
+  const summaries = (live?.summaries ?? incidents).filter(
+    (i) => i.uploadId === incident.uploadId,
+  );
+  async function run(action: () => Promise<void>) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await action();
+    } catch (e) {
+      setError(safeError(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const verdict = async (
+    status: Schema["VerdictRequest"]["status"],
+    lesson?: Schema["LessonCreate"],
+  ) => {
+    if (!demo) {
+      const saved = unwrap(await saveVerdict(incident.id, { status, lesson }));
+      setIncidents((items) =>
+        items.map((i) => (i.id === incident.id ? { ...i, ...saved } : i)),
+      );
+      setMessage(
+        lesson
+          ? "Incident dismissed and lesson saved."
+          : `Analyst decision saved: ${status}.`,
+      );
+      return;
+    }
     setIncidents((items) =>
       items.map((i) =>
         i.id === incident.id
@@ -50,22 +91,38 @@ export function IncidentScreen() {
           Owner <strong>{incident.assignee?.name ?? "Unassigned"}</strong>{" "}
           <button
             className="small-button"
+            disabled={busy}
             onClick={() =>
-              setIncidents((items) =>
-                items.map((i) =>
-                  i.id === incident.id
-                    ? {
-                        ...i,
-                        assignee: i.assignee
-                          ? undefined
-                          : {
-                              id: "5a1c3e7b-9d2f-4b6a-8c0e-1f3a5b7d9e2c",
-                              name: "sam.r",
-                            },
-                      }
-                    : i,
-                ),
-              )
+              void run(async () => {
+                if (!demo) {
+                  const saved = unwrap(
+                    await assignIncident(incident.id, !incident.assignee),
+                  );
+                  setIncidents((items) =>
+                    items.map((i) =>
+                      i.id === incident.id
+                        ? { ...i, ...saved, assignee: saved.assignee }
+                        : i,
+                    ),
+                  );
+                } else {
+                  setIncidents((items) =>
+                    items.map((i) =>
+                      i.id === incident.id
+                        ? {
+                            ...i,
+                            assignee: i.assignee
+                              ? undefined
+                              : {
+                                  id: "5a1c3e7b-9d2f-4b6a-8c0e-1f3a5b7d9e2c",
+                                  name: "sam.r",
+                                },
+                          }
+                        : i,
+                    ),
+                  );
+                }
+              })
             }
           >
             {incident.assignee ? "Unassign" : "Assign to me"}
@@ -97,10 +154,8 @@ export function IncidentScreen() {
       </div>
       <Link className="back-link" href={`/triage?upload=${upload}`}>
         ← Triage · incident{" "}
-        {incidents
-          .filter((i) => i.uploadId === incident.uploadId)
-          .indexOf(incident) + 1}{" "}
-        of {incidents.filter((i) => i.uploadId === incident.uploadId).length}
+        {summaries.findIndex((i) => i.id === incident.id) + 1} of{" "}
+        {summaries.length}
       </Link>
       <header className="incident-heading">
         <h1>{incident.title}</h1>
@@ -135,16 +190,30 @@ export function IncidentScreen() {
             </div>
           </div>
           <div className="actions verdict-actions">
-            <button className="primary" onClick={() => verdict("confirmed")}>
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => void run(() => verdict("confirmed"))}
+            >
               Confirm malicious
             </button>
-            <button onClick={() => setTeaching(true)}>
+            <button disabled={busy} onClick={() => setTeaching(true)}>
               Dismiss as false positive
             </button>
-            <button onClick={() => verdict("escalated")}>Escalate</button>
+            <button
+              disabled={busy}
+              onClick={() => void run(() => verdict("escalated"))}
+            >
+              Escalate
+            </button>
           </div>
         </div>
       </header>
+      {error && (
+        <p className="notice" role="alert">
+          {error}
+        </p>
+      )}
       {message && (
         <p className="status-message" role="status">
           {message}
@@ -285,7 +354,9 @@ export function IncidentScreen() {
             <span className="eyebrow">
               {incident.narrative.status === "template"
                 ? "Template summary · cited evidence"
-                : "AI interpretation · every sentence cites its evidence"}
+                : incident.narrative.provider === "mock"
+                  ? "AI stand-in · cited evidence"
+                  : "AI interpretation · every sentence cites its evidence"}
             </span>
             {incident.narrative.status === "unavailable" ? (
               <p>Not available for this incident.</p>
@@ -347,21 +418,25 @@ export function IncidentScreen() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!note.trim()) return;
-                  const saved = {
-                    id: crypto.randomUUID(),
-                    author: "sam.r",
-                    text: note.trim(),
-                    createdAt: new Date().toISOString(),
-                  };
-                  setIncidents((items) =>
-                    items.map((i) =>
-                      i.id === incident.id
-                        ? { ...i, notes: [...i.notes, saved] }
-                        : i,
-                    ),
-                  );
-                  setNote("");
-                  setMessage("Note saved.");
+                  void run(async () => {
+                    const saved = demo
+                      ? {
+                          id: crypto.randomUUID(),
+                          author: "sam.r",
+                          text: note.trim(),
+                          createdAt: new Date().toISOString(),
+                        }
+                      : unwrap(await addNote(incident.id, note.trim()));
+                    setIncidents((items) =>
+                      items.map((i) =>
+                        i.id === incident.id
+                          ? { ...i, notes: [...i.notes, saved] }
+                          : i,
+                      ),
+                    );
+                    setNote("");
+                    setMessage("Note saved.");
+                  });
                 }}
               >
                 <label htmlFor="note">Add a note</label>
@@ -373,7 +448,10 @@ export function IncidentScreen() {
                   rows={3}
                   placeholder="What you checked, who you called, what you decided"
                 />
-                <button className="small-button" disabled={!note.trim()}>
+                <button
+                  className="small-button"
+                  disabled={busy || !note.trim()}
+                >
                   Save note
                 </button>
               </form>
@@ -423,7 +501,8 @@ export function IncidentScreen() {
           incident={incident}
           close={() => setTeaching(false)}
           save={async (lesson) => {
-            verdict("dismissed");
+            await verdict("dismissed", lesson);
+            if (!demo) return;
             if (lesson) {
               setLessons((items) => [
                 ...items,

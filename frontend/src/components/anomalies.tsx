@@ -1,24 +1,46 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { anomalyPage } from "@/lib/api/actions";
+import { unwrap } from "@/lib/api/result";
+import { usePagedData } from "./use-paged-data";
+import type { Schema } from "@/lib/types";
 import { anomalyFixtures } from "@/lib/evaluation-fixtures";
 import { useWorkspace } from "./workspace";
 import { words, time } from "@/lib/format";
 export function Anomalies() {
-  const { zone, selectedUploadId } = useWorkspace();
+  const { zone, selectedUploadId, live, demo } = useWorkspace();
   const query = useSearchParams();
   const upload = query.get("upload") ?? selectedUploadId;
   const [filter, setFilter] = useState(
     query.get("judgesDisagree") === "true" ? "disagree" : "all",
   );
-  const rows = anomalyFixtures.filter(
-    (a) =>
-      filter === "all" ||
-      (filter === "disagree" &&
-        a.decision?.label !== a.shadowDecision?.label) ||
-      a.disposition === filter,
+  const fetchPage = useCallback(
+    async (cursor?: string) =>
+      unwrap(
+        await anomalyPage(upload, {
+          limit: 200,
+          cursor,
+          disposition:
+            filter !== "all" && filter !== "disagree"
+              ? (filter as Schema["AnomalyDisposition"])
+              : undefined,
+          judgesDisagree: filter === "disagree" || undefined,
+        }),
+      ),
+    [upload, filter],
   );
+  const remote = usePagedData(live?.anomalies, fetchPage, !demo);
+  const rows = demo
+    ? anomalyFixtures.filter(
+        (a) =>
+          filter === "all" ||
+          (filter === "disagree" &&
+            a.decision?.label !== a.shadowDecision?.label) ||
+          a.disposition === filter,
+      )
+    : remote.page.items;
   return (
     <>
       <Link href={`/triage?upload=${upload}`}>← Triage</Link>
@@ -27,14 +49,19 @@ export function Anomalies() {
       <label className="anomaly-filter">
         Show{" "}
         <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="all">All sample anomalies</option>
+          <option value="all">All anomalies</option>
           <option value="below_threshold">Below threshold</option>
           <option value="judged_benign">Judged benign</option>
           <option value="lesson">Set aside by a lesson</option>
           <option value="disagree">Judges disagree</option>
         </select>
       </label>
-      <div className="panel table-scroll section">
+      {!demo && remote.error && (
+        <p role="alert">
+          {remote.error} <button onClick={remote.retry}>Try again</button>
+        </p>
+      )}
+      <div className="panel table-scroll section" aria-busy={remote.busy}>
         <table>
           <thead>
             <tr>
@@ -78,6 +105,18 @@ export function Anomalies() {
           <p className="empty">No anomalies match this filter.</p>
         )}
       </div>
+      {!demo && (
+        <div className="actions">
+          <span>
+            {rows.length} of {remote.page.total} anomalies
+          </span>
+          {remote.page.nextCursor && (
+            <button disabled={remote.busy} onClick={remote.more}>
+              Load more anomalies
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 }
