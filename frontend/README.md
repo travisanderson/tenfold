@@ -15,7 +15,7 @@ Live mode is the default. The logo opens Triage; an account with no uploads land
 - Demo samples deliberately pause for malformed lines. “Analyze the good lines” sends `acceptParseErrors: true`. The completed run shows skipped-line counts in Triage.
 - Triage uses incident summaries and 10-minute/hourly time series. Incident detail, notes, assignment, verdicts, and lesson previews use their contract endpoints.
 - Event search, action/time/anomaly filters, and pagination run on the server. The global search opens Events with the same query. Export streams NDJSON through Next.js without buffering the whole file.
-- Scorecard and anomalies use live responses. A single judge displays no invented comparison or agreement percentage. The deployed backend currently uses a mock AI provider; this is separate from frontend fixture mode.
+- Scorecard and anomalies use live responses. A single judge displays no invented comparison or agreement percentage. The deployed backend runs Jev as the judge and Claude as the narrator, with no second judge; a local Docker run uses the mock provider. Both are separate from frontend fixture mode.
 
 `../api/openapi.yaml` remains the source of truth. Do not hand-edit generated `src/lib/api/schema.d.ts`.
 
