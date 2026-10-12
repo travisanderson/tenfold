@@ -1,0 +1,52 @@
+# Local Supabase for Tenfold: Postgres, Auth and Storage, as in production.
+# `npx supabase start` reads this file. Anything not set here keeps the
+# CLI's default. Reference: https://supabase.com/docs/guides/local-development/cli/config
+project_id = "tenfold"
+
+[api]
+port = 54321
+
+[db]
+port = 54322
+major_version = 17
+
+# The Go API owns the schema: it applies backend/internal/store/migrations
+# each time it starts, here as in production. So there is no
+# supabase/migrations folder, and the seed creates only what the API does
+# not: the demo user and the storage bucket.
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+port = 54323
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "http://localhost:3000"
+# As in production: nobody signs up. The seed creates the one demo user.
+enable_signup = false
+
+[auth.email]
+enable_confirmations = false
+
+# Tenfold uses none of these, and each one is another image to pull.
+[realtime]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
+
+[local_smtp]
+enabled = false
+
+[storage.s3_protocol]
+enabled = false
+
+[storage.vector]
+enabled = false
