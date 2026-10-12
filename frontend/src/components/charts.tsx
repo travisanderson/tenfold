@@ -8,7 +8,7 @@ import { time, bytes } from '@/lib/format';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip, annotationPlugin);
 function usePalette() {
  const [palette, setPalette] = useState<Record<string,string> | null>(null);
- useEffect(() => { const css = getComputedStyle(document.documentElement); const names = ['text-secondary','chart-line','chart-band','chart-bar','chart-flagged-fill','flagged','accent','selected','panel']; setPalette(Object.fromEntries(names.map(n=>[n,css.getPropertyValue(`--color-${n}`).trim()]))); }, []);
+ useEffect(() => { const frame = requestAnimationFrame(() => { const css = getComputedStyle(document.documentElement); const names = ['text-secondary','chart-line','chart-band','chart-bar','chart-flagged-fill','flagged','accent','selected','panel']; setPalette(Object.fromEntries(names.map(n=>[n,css.getPropertyValue(`--color-${n}`).trim()]))); }); return () => cancelAnimationFrame(frame); }, []);
  return palette;
 }
 export function RiskTimeline({ series, incidents, threshold, zone, onOpen }: { series: Schema['TimeseriesResponse']; incidents: Schema['IncidentSummary'][]; threshold: number; zone: string; onOpen: (id: string)=>void }) {
