@@ -40,9 +40,12 @@ Prism and its mock scripts have been removed. The fixture preview runs in memory
 ## Checks
 
 ```sh
+npm test
 npm run typecheck
 npm run lint
 npm run build
+npm audit
+npm audit --omit=dev
 # Against a running live-mode dev server; set these in your shell:
 # TENFOLD_TEST_EMAIL and TENFOLD_TEST_PASSWORD
 npx playwright test tests/live.spec.ts --workers=1
@@ -53,3 +56,9 @@ TENFOLD_FIXTURE_MODE=true npx playwright test tests/preview.spec.ts
 ```
 
 Browser tests use installed Chrome. Live tests create demo uploads in the test account and leave a completed investigation for review. They check auth, malformed-line handling, progress, refresh persistence, analyst actions, backend search/pagination, scorecard, anomalies, mobile layout, and sign-out. Fixtures have separate desktop/mobile design checks. Test screenshots and browser artifacts are ignored in `test-results/`.
+
+## Development dependency maintenance
+
+Vitest was upgraded from 3.2.7 to 4.1.11 after checking the [v4 migration guide](https://v4.vitest.dev/guide/migration.html). It removes Tinypool and patches the mocker path traversal finding. Unit tests use ordinary function mocks; no coverage, browser-provider, custom-pool, or snapshot migration is needed. `vitest.config.mjs` limits discovery to `src/**/*.test.{ts,tsx}` so Vitest does not collect Playwright suites or build output. The explicit ESM extension also avoids Vite's native config-loader warning. Use Node 22.12+ on the 22.x line, or Node 24+ to satisfy the installed tooling.
+
+The remaining audit findings come from `eslint-config-next → @next/eslint-plugin-next → fast-glob → micromatch → braces`. As checked on October 11, 2026, ESLint 9.39.5 and eslint-config-next 16.4.0 are current within their installed major versions, and braces 3.0.3 is the latest published version. The [braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) lists no patched release. Deeply nested glob patterns can exhaust the stack during development linting. This dependency chain is development-only; production dependencies audit cleanly. Recheck for an upstream fix during dependency updates. Do not apply the audit's proposed downgrade to eslint-config-next 14 or force an incompatible transitive override.
